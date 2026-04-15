@@ -1,7 +1,7 @@
 import { createContext, useEffect, useState } from 'react';
 import { account } from '../lib/appwrite';
 import { ID } from 'react-native-appwrite';
-import * as SecureStore from 'expo-secure-store'; // 1. Import SecureStore
+import * as SecureStore from 'expo-secure-store';
 
 export const UserContext = createContext();
 
@@ -9,63 +9,78 @@ const CACHE_KEY = 'user_session_cache';
 
 export function UserProvider({ children }) {
     const [user, setUser] = useState(null);
-    const [authChecked, setAuthChecked] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
-    // 2. Load cached user immediately on startup
     useEffect(() => {
-        async function loadCachedUser() {
+        async function initializeAuth() {
             try {
+                // 1. Instantly try to get cached user
                 const cached = await SecureStore.getItemAsync(CACHE_KEY);
                 if (cached) {
                     setUser(JSON.parse(cached));
+                    // If we have a cache, let the user in IMMEDIATELY
+                    // We will still sync with the server in the background
+                    setIsLoading(false); 
                 }
             } catch (e) {
                 console.log("Error loading cache", e);
             } finally {
-                // Now check the server to sync
-                refreshUser();
+                // 2. Sync with server (refreshUser handles its own loading state)
+                await refreshUser();
             }
         }
-        loadCachedUser();
+        initializeAuth();
     }, []);
 
     async function refreshUser() {
+        // Create a promise that rejects after 3 seconds
+        // This prevents the "logo hang" if the network is stuck
+        const timeout = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("Timeout")), 3000)
+        );
+
         try {
-            const response = await account.get();
+            // Race the Appwrite call against our 3-second timeout
+            const response = await Promise.race([
+                account.get(),
+                timeout
+            ]);
+
             setUser(response);
-            // 3. Update the cache with fresh data
             await SecureStore.setItemAsync(CACHE_KEY, JSON.stringify(response));
             return response;
         } catch (error) {
-            // 🛠️ FIX: If offline, we DO NOT set user to null. 
-            // We only clear it if the session is actually expired (401).
+            console.log("Sync failed (Offline or Timeout):", error.message);
+            
+            // Only log the user out if the server EXPLICITLY says the session is dead
             if (error.code === 401 || error.code === 403) {
                 setUser(null);
                 await SecureStore.deleteItemAsync(CACHE_KEY);
             }
-            console.log("Auth Check (likely offline):", error.message);
+            // If it's a timeout or network error, we stay logged in with CACHED data
         } finally {
-            setAuthChecked(true);
-            setIsLoading(false);
+            setIsLoading(false); // <--- Guaranteed to run
         }
     }
 
     async function login(email, password) {
+        setIsLoading(true); // Show loading while logging in
         try {
             await account.createEmailPasswordSession(email, password);
-            const freshUser = await refreshUser();
-            return freshUser;
+            return await refreshUser();
         } catch (error) {
+            setIsLoading(false);
             throw new Error(error.message);
         }
     }
     
     async function register(email, password) {
+        setIsLoading(true);
         try {
             await account.create(ID.unique(), email, password);
             return await login(email, password);
         } catch (error) {
+            setIsLoading(false);
             throw new Error(error.message);
         }
     }
@@ -74,7 +89,6 @@ export function UserProvider({ children }) {
         try {
             await account.deleteSession("current");
             setUser(null);
-            // 4. Clear the cache on logout
             await SecureStore.deleteItemAsync(CACHE_KEY);
         } catch (error) {
             console.log("Logout error:", error);
@@ -87,7 +101,6 @@ export function UserProvider({ children }) {
             login, 
             register, 
             logout, 
-            authChecked, 
             isLoading, 
             refreshUser 
         }}>
