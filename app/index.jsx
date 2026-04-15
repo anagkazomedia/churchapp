@@ -1,7 +1,12 @@
-import React, { useEffect } from 'react';
-import { StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
+
+// Logic & Storage
+import { account } from '../lib/appwrite'; // Import your Appwrite config
+import { checkYoutube, registerBackgroundCheck } from '../src/services/YoutubeChecker'; 
 
 // Components
 import ThemedView from '../components/ThemedView';
@@ -9,65 +14,81 @@ import ThemedLogo from '../components/ThemedLogo';
 import Spacer from '../components/Spacer';
 import ThemedText from '../components/ThemedText';
 
-// Logic - Ensure this path matches where you moved the folder!
-import { checkYoutube, registerBackgroundCheck } from '../src/services/YoutubeChecker'; 
+if (Constants.appOwnership !== 'expo') {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+      }),
+    });
+}
 
-// This handler ensures the notification pops up even if the app is open
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
-
-const Home = () => {
+const Index = () => {
   const router = useRouter();
+  const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
-    let isMounted = true;
-
-    // 1. Run Youtube Logic
-    checkYoutube();
-    registerBackgroundCheck();
-
-    // 2. Set the redirect timer
-    const timer = setTimeout(() => {
-      if (isMounted) {
-        // IMPORTANT: Ensure the file app/dashboard/Home.jsx exists.
-        // If it is lowercase in your folder (home.jsx), change this to '/dashboard/home'
-        router.replace('/dashboard/profile');
+    const initializeApp = async () => {
+      // 1. Run Youtube Logic
+      try {
+          checkYoutube();
+          registerBackgroundCheck();
+      } catch (e) {
+          console.warn("Service initialization failed:", e);
       }
-    }, 2000);
 
-    // 3. Cleanup to prevent crashes on logout
-    return () => {
-      isMounted = false;
-      clearTimeout(timer);
+      // 2. CHECK LOGIN STATUS (Persistence Logic)
+      try {
+        const user = await account.get(); // Try to get the current session
+        if (user) {
+          // USER FOUND: Go to Profile as you requested
+          router.replace('/dashboard/profile');
+        }
+      } catch (error) {
+        // NO USER FOUND: Go to Login/Welcome screen
+        console.log("No active session found, redirecting to login.");
+        router.replace('/auth/login'); // Change this to your login path
+      } finally {
+        setCheckingSession(false);
+      }
     };
+
+    // Delay slightly so the logo is actually seen (approx 1.5s)
+    const timer = setTimeout(initializeApp, 1500);
+
+    return () => clearTimeout(timer);
   }, []);
 
   return (
     <ThemedView style={styles.container}>
       <ThemedLogo /> 
-      <Spacer height={20} />    
+      <Spacer size={20} />    
       <ThemedText style={[styles.title, { color: 'gold'}]} title={true}>
-        Welcome
+        Anagkazo
       </ThemedText>
+      
+      {/* Optional: Show a small loader while checking session */}
+      {checkingSession && (
+        <ActivityIndicator size="small" color="gold" style={{ marginTop: 20 }} />
+      )}
     </ThemedView>
   );
 };
 
-export default Home;
+export default Index;
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
+        backgroundColor: '#000' // Matches the Phaneroo dark theme
     },
     title: {
-        fontWeight: 'bold',
-        fontSize: 18
+        fontWeight: '900', // Changed to match your church's bold branding
+        fontSize: 22,
+        letterSpacing: 2,
+        textTransform: 'uppercase'
     }
 });

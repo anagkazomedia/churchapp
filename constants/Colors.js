@@ -1,23 +1,23 @@
 export const Colors = {
-    primary: "#ffd700",
-    warning: "#cc475a",
+    primary: "#FFD700", // Bright Gold
+    warning: "#FF3B30", 
 
-    dark:{
-        text: "#ffffffff",
-        title: "#fff",
-        background: "#000",
-        navBackground: "#000",
-        iconColor: "#9591a5",
-        iconColorFocused: "#ffd700",
-        uiBackground: "#2f2b3d",
+    dark: {
+        text: "#FFFFFF",        // Pure white for that sharp contrast
+        title: "#FFD700",       // Titles in Gold looks very "Phaneroo"
+        background: "#000000",   // True Black (OLED)
+        navBackground: "#000000",
+        iconColor: "#888888",
+        iconColorFocused: "#FFD700",
+        uiBackground: "#121212", // Very dark grey, just enough to see cards
     }, 
     light: {
-        text: "#000000ff",
-        title: "#000000ff",
-        background: "#e0dfe8",
-        navBackground: "#e8e7ef",
-        iconColor: "#686477",
-        iconColorFocused: "#ffd700",
-        uiBackground: "#d6d5e1"
+        text: "#000000",        // Sharp black text
+        title: "#000000",
+        background: "#FFFFFF",   // Pure white (removes the greyish look)
+        navBackground: "#FFFFFF",
+        iconColor: "#666666",
+        iconColorFocused: "#FFD700",
+        uiBackground: "#F9F9F9", // Almost white, very subtle card difference
     },
 }

@@ -1,18 +1,26 @@
-import { Text, useColorScheme } from "react-native";
-import { Colors } from '../constants/Colors'
+import React, { useContext } from 'react';
+import { Text } from "react-native";
+import { Colors } from '../constants/Colors';
+import { ThemeContext } from './ThemedContext'; // The missing link
 
 const ThemedText = ({ style, title = false, ...props }) => {
-    const colorScheme = useColorScheme()
-    const theme = Colors[colorScheme] ?? Colors.light
+    // 1. Swap system hook for your custom context
+    const { isDark } = useContext(ThemeContext);
+    const theme = isDark ? Colors.dark : Colors.light;
     
-    const textColor = title ? theme.title : theme.text
+    // 2. Determine color based on whether it's a title or regular text
+    const textColor = title ? theme.title : theme.text;
 
     return (
         <Text
-        style={[{ color: textColor }, style]}
-        {...props}
+            style={[
+                { color: textColor },
+                title && { fontWeight: '900', fontSize: 24 }, // Stronger emphasis for titles
+                style
+            ]}
+            {...props}
         />
     )
 }
 
-export default ThemedText
+export default ThemedText;

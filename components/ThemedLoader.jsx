@@ -1,20 +1,28 @@
-import { ActivityIndicator, useColorScheme } from "react-native";
-import { Colors } from '../constants/Colors'
+import React, { useContext } from 'react';
+import { ActivityIndicator, StyleSheet } from "react-native";
+import { Colors } from '../constants/Colors';
+import { ThemeContext } from './ThemedContext'; // The critical link
 import ThemedView from "./ThemedView";
 
 const ThemedLoader = () => {
-    const colorScheme = useColorScheme()
-    const theme = Colors[colorScheme] ?? Colors.light
+    // 1. Pull the real-time theme state
+    const { isDark } = useContext(ThemeContext);
+    const theme = isDark ? Colors.dark : Colors.light;
 
     return (
-        <ThemedView style={{
-            flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center'
-        }}>
-            <ActivityIndicator size="large" color={theme.text} />
+        <ThemedView style={styles.container}>
+            {/* 2. Using theme.text or 'gold' ensures visibility */}
+            <ActivityIndicator size="large" color="gold" />
         </ThemedView>
     )
 }
 
-export default ThemedLoader
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center'
+    }
+});
+
+export default ThemedLoader;

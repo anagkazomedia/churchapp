@@ -1,16 +1,26 @@
-import { Image, useColorScheme } from 'react-native'
+import React, { useContext } from 'react';
+import { Image } from 'react-native';
+import { ThemeContext } from './ThemedContext'; // Hooking into your switch
 
-//images
-import DarkLogo from '../assets/anagkazo-start.png'
-import LightLogo from '../assets/anagkazo-start.png'
+// images
+import DarkLogo from '../assets/anagkazo-start.png';
+import LightLogo from '../assets/anagkazo-start.png';
 
-const ThemedLogo = ({ ...props }) => {
-    const colorScheme = useColorScheme()
+const ThemedLogo = ({ style, ...props }) => {
+    // 1. Get the current theme state
+    const { isDark } = useContext(ThemeContext);
 
-    const logo = colorScheme === 'dark' ? DarkLogo : LightLogo
+    // 2. Switch logo based on your app's internal toggle
+    const logo = isDark ? DarkLogo : LightLogo;
 
     return (
-        <Image source={logo} {...props} />
-    )
-}
-export default ThemedLogo
+        <Image 
+            source={logo} 
+            style={style}
+            resizeMode="contain" // Keeps branding proportions perfect
+            {...props} 
+        />
+    );
+};
+
+export default ThemedLogo;

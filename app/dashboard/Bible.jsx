@@ -1,36 +1,43 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useContext } from 'react';
 import { 
   StyleSheet, View, TextInput, TouchableOpacity, 
-  FlatList, ActivityIndicator, Alert, ScrollView, Keyboard 
+  FlatList, ActivityIndicator, Alert, ScrollView, 
+  Text, Keyboard // Ensure 'Text' is imported here
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import NetInfo from "@react-native-community/netinfo";
 
 import { account, databases, DATABASE_ID, COLLECTION_ID } from '../../lib/appwrite'; 
 import bibleData from '../../assets/kjv.json';
-import ThemedView from '../../components/ThemedView'; 
-import ThemedText from '../../components/ThemedText';
+import CornerDropdown from '../../components/CornerDropdown'; 
+import { ThemeContext } from '../../components/ThemedContext';
+import { Colors } from '../../constants/Colors';
 
-// Improvement: Move static data outside component to prevent re-calculation on every render
-const ALL_BOOKS = [...new Set(bibleData.verses.map(v => v.book_name))];
+// Safe check for bible data
+const ALL_BOOKS = bibleData?.verses ? [...new Set(bibleData.verses.map(v => v.book_name))] : [];
 
 export default function BibleApp() {
   const router = useRouter();
   const flatListRef = useRef(null);
+  const { isDark } = useContext(ThemeContext);
   
+  // Dynamic UI values
+  const headerBg = isDark ? '#121212' : '#F0F0F3'; 
+  const inputBg = isDark ? '#1E1E1E' : '#FFFFFF';
+  const dynamicBorder = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+  const textColor = isDark ? '#FFFFFF' : '#000000';
+
   const [book, setBook] = useState('Genesis');
+  const [currentChapter, setCurrentChapter] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState(''); // New: For performance
+  const [debouncedSearch, setDebouncedSearch] = useState(''); 
   const [currentUser, setCurrentUser] = useState(null);
   const [savingId, setSavingId] = useState(null);
 
-  // --- IMPROVEMENT: DEBOUNCE LOGIC ---
-  // This prevents the app from laggy typing by waiting 300ms before filtering 31k verses
   useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-    }, 300);
+    const handler = setTimeout(() => setDebouncedSearch(searchQuery), 350);
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
@@ -44,48 +51,33 @@ export default function BibleApp() {
     checkUser();
   }, []);
 
-  // --- FIXED & IMPROVED SEARCH/VIEW LOGIC ---
+  const chapterList = useMemo(() => {
+    const bookVerses = bibleData.verses.filter(v => v.book_name === book);
+    const maxChapter = Math.max(...bookVerses.map(v => v.chapter));
+    return Array.from({ length: maxChapter }, (_, i) => i + 1);
+  }, [book]);
+
   const versesToDisplay = useMemo(() => {
     const query = debouncedSearch.trim().toLowerCase();
-
-    // FIXED: Now shows ALL chapters of the book when not searching
-    if (!query) {
-      return bibleData.verses.filter(v => v.book_name === book);
+    if (query) {
+      return bibleData.verses.filter(v => 
+        v.text.toLowerCase().includes(query) || 
+        v.book_name.toLowerCase().includes(query)
+      ).slice(0, 50);
     }
-
-    const refRegex = /^(.+)\s(\d+):(\d+)$/i;
-    const match = query.match(refRegex);
-
-    if (match) {
-      const [_, b, c, v] = match;
-      return bibleData.verses.filter(item => 
-        item.book_name.toLowerCase() === b.toLowerCase() &&
-        item.chapter === parseInt(c) &&
-        item.verse === parseInt(v)
-      );
-    } 
-
-    const bookChapterRegex = /^(.+)\s(\d+)$/i;
-    const bcMatch = query.match(bookChapterRegex);
-    if (bcMatch) {
-        const [_, b, c] = bcMatch;
-        return bibleData.verses.filter(item => 
-            item.book_name.toLowerCase() === b.toLowerCase() &&
-            item.chapter === parseInt(c)
-        );
-    }
-
-    return bibleData.verses.filter(v => 
-      v.text.toLowerCase().includes(query) || 
-      v.book_name.toLowerCase().includes(query)
-    ).slice(0, 50);
-  }, [book, debouncedSearch]); // Removed 'chapter' dependency
+    return bibleData.verses.filter(v => v.book_name === book && v.chapter === currentChapter);
+  }, [book, currentChapter, debouncedSearch]);
 
   const selectBook = (selectedBook) => {
     setBook(selectedBook);
-    setSearchQuery(''); 
-    setDebouncedSearch('');
-    // Scroll to top when changing books
+    setCurrentChapter(1);
+    setSearchQuery('');
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+  };
+
+  const selectChapter = (chap) => {
+    setCurrentChapter(chap);
+    setSearchQuery('');
     flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
   };
 
@@ -94,7 +86,11 @@ export default function BibleApp() {
       Alert.alert("Login Required", "Log in to save favorites.");
       return;
     }
-    // MISTAKE FIX: Use a consistent unique ID string
+    const state = await NetInfo.fetch();
+    if (!state.isConnected) {
+      Alert.alert("Offline", "Connection required to save favorites.");
+      return;
+    }
     const verseId = `${verseObj.book_name}-${verseObj.chapter}-${verseObj.verse}`;
     setSavingId(verseId);
     try {
@@ -102,129 +98,138 @@ export default function BibleApp() {
         scripture: `${verseObj.book_name} ${verseObj.chapter}:${verseObj.verse}: ${verseObj.text}`,
         userid: currentUser.$id 
       });
-      Alert.alert("Success", "Added to Favorites!");
+      Alert.alert("Success", "Saved to favorites!");
     } catch (error) {
-      Alert.alert("Error", "Check Appwrite permissions.");
+      Alert.alert("Error", "Save failed.");
     } finally { setSavingId(null); }
   };
 
   return (
-    <ThemedView style={styles.root}>
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        
-        <View style={styles.topNavigation}>
-            <View style={styles.searchContainer}>
-                <Icon name="search-outline" size={18} color="#777" />
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Search (e.g. John 3:16)"
-                  placeholderTextColor="#777"
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  autoCorrect={false}
-                />
-            </View>
-            <TouchableOpacity onPress={() => router.push('../favourites')} style={styles.navFavBtn}>
-                <Icon name="heart" size={24} color="#ffd700" />
-            </TouchableOpacity>
-        </View>
-
-        <View style={styles.bookSelectorContainer}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.bookScroll}>
-            {ALL_BOOKS.map((bName) => (
-              <TouchableOpacity 
-                key={bName} 
-                style={[styles.bookChip, book === bName && styles.activeBookChip]}
-                onPress={() => selectBook(bName)}
-              >
-                <ThemedText style={[styles.bookChipText, book === bName && styles.activeBookChipText]}>
-                  {bName}
-                </ThemedText>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        <FlatList
-          ref={flatListRef}
-          data={versesToDisplay}
-          showsVerticalScrollIndicator={false}
-          // IMPROVEMENT: More robust key
-          keyExtractor={(item) => `${item.book_name}-${item.chapter}-${item.verse}`}
-          ListHeaderComponent={
-            <View style={styles.header}>
-               <ThemedText style={styles.bibleHeading}>
-                 {debouncedSearch ? "Search Results" : book}
-               </ThemedText>
-               <View style={styles.goldUnderline} />
-            </View>
-          }
-          contentContainerStyle={styles.readerContainer}
-          renderItem={({ item, index }) => {
-            // IMPROVEMENT: Show Chapter Heading when a new chapter starts
-            const isNewChapter = !debouncedSearch && (index === 0 || versesToDisplay[index - 1].chapter !== item.chapter);
-            const currentId = `${item.book_name}-${item.chapter}-${item.verse}`;
-
-            return (
-              <View>
-                {isNewChapter && (
-                  <ThemedText style={styles.chapterHeader}>Chapter {item.chapter}</ThemedText>
-                )}
-                <TouchableOpacity 
-                    activeOpacity={0.7} 
-                    onPress={() => Keyboard.dismiss()} 
-                    style={styles.verseWrapper}
-                >
-                  <ThemedText style={styles.verseNumber}>{item.verse}</ThemedText>
-                  <View style={{ flex: 1 }}>
-                    {debouncedSearch !== '' && (
-                        <ThemedText style={styles.resultRef}>{item.book_name} {item.chapter}:{item.verse}</ThemedText>
-                    )}
-                    <ThemedText style={styles.verseContent}>{item.text}</ThemedText>
-                  </View>
-                  
-                  <TouchableOpacity 
-                    onPress={() => saveToFavorites(item)} 
-                    style={styles.favBtn}
-                    disabled={savingId === currentId}
-                  >
-                    {savingId === currentId ? (
-                      <ActivityIndicator size="small" color="#ffd700" />
-                    ) : (
-                      <Icon name="heart-outline" size={22} color="#888" />
-                    )}
-                  </TouchableOpacity>
-                </TouchableOpacity>
+    <View style={[styles.root, { backgroundColor: isDark ? '#000' : '#FFF' }]}>
+      {/* PHANEROO HEADER SURFACE */}
+      <View style={[styles.headerSurface, { backgroundColor: headerBg, borderBottomColor: dynamicBorder }]}>
+        <SafeAreaView edges={['top']}>
+          <View style={styles.topNavigation}>
+              <View style={[styles.searchContainer, { backgroundColor: inputBg }]}>
+                  <Icon name="search-outline" size={18} color={isDark ? "#888" : "#666"} />
+                  <TextInput
+                    style={[styles.searchInput, { color: textColor }]}
+                    placeholder="Search Bible..."
+                    placeholderTextColor={isDark ? "#666" : "#999"}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                  />
               </View>
-            );
-          }}
-        />
-      </SafeAreaView>
-    </ThemedView>
+              <View style={styles.headerActions}>
+                  <TouchableOpacity onPress={() => router.push('../favourites')} style={styles.navFavBtn}>
+                      <Icon name="heart-outline" size={24} color="gold" />
+                  </TouchableOpacity>
+                  <CornerDropdown />
+              </View>
+          </View>
+
+          <View style={styles.persistentSelectors}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollPadding}>
+              {ALL_BOOKS.map((bName) => (
+                <TouchableOpacity 
+                  key={bName} 
+                  style={[
+                      styles.bookChip, 
+                      { backgroundColor: inputBg, borderColor: dynamicBorder },
+                      book === bName && styles.activeBookChip
+                  ]}
+                  onPress={() => selectBook(bName)}
+                >
+                  <Text style={[styles.bookChipText, { color: textColor }, book === bName && styles.activeBookChipText]}>{bName}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <View style={{ height: 10 }} />
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollPadding}>
+              {chapterList.map((chap) => (
+                <TouchableOpacity 
+                  key={chap} 
+                  style={[
+                      styles.chapterBtn, 
+                      { backgroundColor: inputBg, borderColor: dynamicBorder },
+                      currentChapter === chap && styles.activeChapterBtn
+                  ]}
+                  onPress={() => selectChapter(chap)}
+                >
+                  <Text style={[styles.chapterBtnText, { color: textColor }, currentChapter === chap && styles.activeChapterBtnText]}>
+                    {chap}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </SafeAreaView>
+      </View>
+
+      <FlatList
+        ref={flatListRef}
+        data={versesToDisplay}
+        keyExtractor={(item) => `${item.book_name}-${item.chapter}-${item.verse}`}
+        ListHeaderComponent={
+          <View style={styles.header}>
+             <Text style={[styles.bibleHeading, { color: textColor }]}>
+               {debouncedSearch ? "SEARCH RESULTS" : `${book.toUpperCase()} ${currentChapter}`}
+             </Text>
+             <View style={styles.goldUnderline} />
+          </View>
+        }
+        contentContainerStyle={styles.readerContainer}
+        renderItem={({ item }) => (
+          <View style={styles.verseWrapper}>
+            <Text style={styles.verseNumber}>{item.verse}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.verseContent, { color: isDark ? '#CCC' : '#333' }]}>{item.text}</Text>
+            </View>
+            <TouchableOpacity onPress={() => saveToFavorites(item)} style={styles.favBtn}>
+              {savingId === `${item.book_name}-${item.chapter}-${item.verse}` ? (
+                <ActivityIndicator size="small" color="gold" />
+              ) : (
+                <Icon name="bookmark-outline" size={20} color={isDark ? "#888" : "#999"} />
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+      />
+    </View>
   );
 }
 
+// --- CRITICAL: THE STYLES OBJECT ---
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  safeArea: { flex: 1 },
-  topNavigation: { flexDirection: 'row', paddingHorizontal: 20, alignItems: 'center', gap: 15, marginTop: 10 },
-  searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.07)', borderRadius: 12, paddingHorizontal: 12, height: 45 },
-  searchInput: { flex: 1, color: '#fff', fontSize: 14, marginLeft: 8 },
-  navFavBtn: { padding: 5 },
-  bookSelectorContainer: { marginTop: 15, marginBottom: 5 },
-  bookScroll: { paddingHorizontal: 20, gap: 10 },
-  bookChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  activeBookChip: { backgroundColor: 'rgba(255, 215, 0, 0.2)', borderColor: '#ffd700' },
-  bookChipText: { fontSize: 13, opacity: 0.7 },
-  activeBookChipText: { color: '#ffd700', fontWeight: 'bold', opacity: 1 },
-  header: { paddingHorizontal: 25, marginBottom: 10, marginTop: 20 },
-  bibleHeading: { fontSize: 34, fontWeight: '900' },
-  chapterHeader: { fontSize: 22, fontWeight: 'bold', color: '#ffd700', marginLeft: 25, marginTop: 30, marginBottom: 15 },
-  goldUnderline: { height: 4, width: 40, backgroundColor: '#ffd700', marginTop: 5, borderRadius: 2 },
-  readerContainer: { paddingBottom: 100 },
-  verseWrapper: { flexDirection: 'row', paddingHorizontal: 25, marginBottom: 24, alignItems: 'flex-start' },
-  verseNumber: { width: 35, fontSize: 14, fontWeight: 'bold', color: '#ffd700', marginTop: 5 },
-  resultRef: { color: '#ffd700', fontSize: 12, fontWeight: 'bold', marginBottom: 4 },
-  verseContent: { fontSize: 18, lineHeight: 28, opacity: 0.9 },
-  favBtn: { marginLeft: 15, paddingTop: 4, width: 30, alignItems: 'center' }
+  headerSurface: {
+    borderBottomWidth: 1,
+    elevation: 4,
+    paddingBottom: 15,
+  },
+  topNavigation: { flexDirection: 'row', paddingHorizontal: 15, alignItems: 'center', marginTop: 10, gap: 10 },
+  searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', borderRadius: 12, paddingHorizontal: 12, height: 45 },
+  searchInput: { flex: 1, fontSize: 14, marginLeft: 8 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  navFavBtn: { padding: 8 },
+  persistentSelectors: { marginTop: 15 },
+  scrollPadding: { paddingHorizontal: 20, gap: 8 },
+  bookChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, borderWidth: 1 },
+  activeBookChip: { backgroundColor: 'rgba(255, 215, 0, 0.15)', borderColor: 'gold' },
+  bookChipText: { fontSize: 11, fontWeight: '900', textTransform: 'uppercase' },
+  activeBookChipText: { color: 'gold' },
+  chapterBtn: { width: 38, height: 38, borderRadius: 12, justifyContent: 'center', alignItems: 'center', borderWidth: 1 },
+  activeChapterBtn: { backgroundColor: 'gold', borderColor: 'gold' },
+  chapterBtnText: { fontSize: 13, fontWeight: '800' },
+  activeChapterBtnText: { color: '#000' },
+  header: { paddingHorizontal: 25, marginBottom: 20, marginTop: 25 },
+  bibleHeading: { fontSize: 24, fontWeight: '900' },
+  goldUnderline: { height: 4, width: 40, backgroundColor: 'gold', marginTop: 5, borderRadius: 2 },
+  readerContainer: { paddingBottom: 60 },
+  verseWrapper: { flexDirection: 'row', paddingHorizontal: 25, marginBottom: 25 },
+  verseNumber: { width: 35, fontSize: 14, fontWeight: '900', color: 'gold', marginTop: 4 },
+  verseContent: { fontSize: 18, lineHeight: 30 },
+  favBtn: { marginLeft: 10, paddingTop: 4, width: 30, alignItems: 'center' },
 });

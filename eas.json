@@ -6,23 +6,22 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal",
-      "android": { "image": "latest" },
-      "ios": { "image": "latest" }
+      "distribution": "internal"
     },
     "preview": {
+      "developmentClient": false,
       "distribution": "internal",
       "autoIncrement": true,
       "android": { 
-        "image": "latest",
         "buildType": "apk" 
-      },
-      "ios": { "image": "latest" }
+      }
     },
     "production": {
+      "developmentClient": false,
       "autoIncrement": true,
-      "android": { "image": "latest" },
-      "ios": { "image": "latest" }
+      "android": { 
+        "buildType": "app-bundle" 
+      }
     }
   },
   "submit": {
