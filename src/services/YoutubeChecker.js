@@ -1,14 +1,17 @@
-import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as BackgroundFetch from 'expo-background-fetch';
 import * as TaskManager from 'expo-task-manager';
 import { Platform } from 'react-native'; 
 import Constants from 'expo-constants'; 
 
+// SAFE IMPORT: This prevents the SDK 53 crash in Expo Go
+const Notifications = Constants.appOwnership !== 'expo' 
+  ? require('expo-notifications') 
+  : null;
+
 const API_KEY = 'AIzaSyBaf4btLUotVuyjk90t0Mdhj8CYWq6zjf4';
 const CHANNEL_ID = 'UUH9G4vzflQn7Ty4K12tR8WQ';
 
-// MISTAKE FIX: Renamed from 'checkube' to 'checkYoutube' to match index.jsx import
 export const checkYoutube = async () => {
   const isExpoGo = Constants.appOwnership === 'expo';
   
@@ -25,6 +28,7 @@ export const checkYoutube = async () => {
 
     const latestVideo = data.items[0];
     
+    // Safety check for the video object structure
     if (!latestVideo.id || !latestVideo.id.videoId) return;
 
     const videoId = latestVideo.id.videoId;
@@ -35,17 +39,19 @@ export const checkYoutube = async () => {
     if (videoId !== lastSeenId) {
       console.log("New video found:", videoTitle);
       
-      if (!isExpoGo) {
+      // Use the 'Notifications' variable we defined at the top
+      if (Notifications) {
         await Notifications.scheduleNotificationAsync({
           content: {
-            title: "New Video Uploaded!",
+            title: "New Video Uploaded! 🎥",
             body: videoTitle,
             data: { url: `https://www.youtube.com/watch?v=${videoId}` },
           },
           trigger: null,
         });
       } else {
-        console.warn("Notification skipped: Use a Development Build to test notifications.");
+        // This will show in your VS Code terminal so you know it worked!
+        console.log("LOG: New video found, but skipping notification in Expo Go.");
       }
 
       await AsyncStorage.setItem('lastVideoId', videoId);
@@ -57,9 +63,9 @@ export const checkYoutube = async () => {
 
 const UBE_TASK_NAME = 'background-ube-check';
 
+// This must stay at the top level of the file
 TaskManager.defineTask(UBE_TASK_NAME, async () => {
   try {
-    // MISTAKE FIX: Also updated the call here to match new name
     await checkYoutube();
     return BackgroundFetch.BackgroundFetchResult.NewData;
   } catch (error) {
@@ -68,13 +74,14 @@ TaskManager.defineTask(UBE_TASK_NAME, async () => {
 });
 
 export const registerBackgroundCheck = async () => {
+  // Background fetch is also limited in Expo Go, so we skip registration there
   if (Constants.appOwnership === 'expo') return;
 
   try {
     const isRegistered = await TaskManager.isTaskRegisteredAsync(UBE_TASK_NAME);
     if (!isRegistered) {
       await BackgroundFetch.registerTaskAsync(UBE_TASK_NAME, {
-        minimumInterval: 15 * 60,
+        minimumInterval: 15 * 60, // 15 minutes
         stopOnTerminate: false,
         startOnBoot: true,
       });

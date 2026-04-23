@@ -1,18 +1,13 @@
 {
   "expo": {
-    "scheme": "churchapp",
     "name": "Anagkazo",
     "slug": "anagkazo-app",
-    "version": "1.0.0",
+    "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/anagkazo-logo.png",
+    "scheme": "churchapp",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/anagkazo-logo.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.churchapp.anagkazo",
@@ -22,11 +17,15 @@
     },
     "android": {
       "package": "com.churchapp.anagkazo",
+      "versionCode": 1,
+      "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/anagkazo-logo.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#000000"
       },
-      "edgeToEdgeEnabled": true
+      "permissions": [
+        "NOTIFICATIONS"
+      ]
     },
     "web": {
       "favicon": "./assets/anagkazo-logo.png"
@@ -35,8 +34,17 @@
       "expo-router",
       "expo-web-browser",
       "expo-font",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-notifications"
     ],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "splash": {
+      "image": "./assets/anagkazo-logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
     "extra": {
       "router": {},
       "eas": {

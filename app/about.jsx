@@ -63,9 +63,9 @@ export default function AboutPage() {
         <View style={[styles.infoCard, { backgroundColor: cardBg, borderColor: dynamicBorder }]}>
           <ThemedText style={styles.cardHeading}>Our Mission</ThemedText>
           <ThemedText style={styles.cardBody}>
-            Welcome to Anagkazo. Our mission is to reach the world 
+            Welcome to Anagkazo Eagles fellowship. Our mission is to reach the world 
             with the gospel through the intersection of technology and faith, 
-            making the Word of God accessible to all, everywhere.
+            making the Word of God accessible to all, everywhere. Luke 14:23
           </ThemedText>
         </View>
 
