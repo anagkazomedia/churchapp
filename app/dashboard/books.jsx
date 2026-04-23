@@ -1,36 +1,56 @@
-import React, { useState, useEffect, useCallback, useContext } from 'react';
+import React, { useState, useEffect, useCallback, useContext, useRef } from 'react';
 import { 
-  StyleSheet, View, FlatList, Dimensions, 
+  StyleSheet, View, Animated, Dimensions, 
   TouchableOpacity, Share, Text, ActivityIndicator 
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import YoutubePlayer from "react-native-youtube-iframe";
 import { SafeAreaView } from 'react-native-safe-area-context';
-import NetInfo from "@react-native-community/netinfo"; // 1. Added NetInfo
+import NetInfo from "@react-native-community/netinfo";
 
 import ThemedView from '../../components/ThemedView'; 
 import ThemedText from '../../components/ThemedText'; 
 import CornerDropdown from '../../components/CornerDropdown'; 
 import { ThemeContext } from '../../components/ThemedContext';
-import { Colors } from '../../constants/Colors';
 
 const { width } = Dimensions.get('window');
 const VIDEO_WIDTH = width - 40;
 
+// This must be exact: Video(210) + Content(~175) + MarginBottom(25)
+const ITEM_SIZE = 410; 
+
 const API_KEY = 'AIzaSyBaf4btLUotVuyjk90t0Mdhj8CYWq6zjf4'; 
 const CHANNEL_ID = 'UCH9G4vzflQn7Ty4K12tR8WQ'; 
+
+const HEADER_MAX_HEIGHT = 140;
+const HEADER_MIN_HEIGHT = 70;
+const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
 
 export default function SermonsPage() {
   const { isDark } = useContext(ThemeContext);
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isOffline, setIsOffline] = useState(false); // 2. Offline state
+  const [isOffline, setIsOffline] = useState(false);
+
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   const headerBg = isDark ? '#121212' : '#F0F0F3'; 
   const cardBg = isDark ? '#1A1A1A' : '#FFFFFF';
   const dynamicBorder = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
 
-  // 3. Monitor network status
+  // Header animations
+  const headerHeight = scrollY.interpolate({
+    inputRange: [0, HEADER_SCROLL_DISTANCE],
+    outputRange: [HEADER_MAX_HEIGHT, HEADER_MIN_HEIGHT],
+    extrapolate: 'clamp',
+  });
+
+  const textOpacity = scrollY.interpolate({
+    inputRange: [0, HEADER_SCROLL_DISTANCE / 2, HEADER_SCROLL_DISTANCE],
+    outputRange: [1, 0.5, 0],
+    extrapolate: 'clamp',
+  });
+
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener(state => {
       setIsOffline(state.isConnected === false);
@@ -40,20 +60,12 @@ export default function SermonsPage() {
 
   useEffect(() => {
     const fetchVideos = async () => {
-      // Don't try to fetch if we know we are offline
-      const net = await NetInfo.fetch();
-      if (!net.isConnected) {
-        setLoading(false);
-        return;
-      }
-
       try {
         setLoading(true);
         const response = await fetch(
           `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${CHANNEL_ID}&part=snippet,id&order=date&maxResults=50`
         );
         const data = await response.json();
-        
         if (data.items) {
           const formattedVideos = data.items
             .filter(item => item.id.videoId)
@@ -66,7 +78,7 @@ export default function SermonsPage() {
           setVideos(formattedVideos);
         }
       } catch (error) {
-        console.error("Error fetching sermons:", error);
+        console.error(error);
       } finally {
         setLoading(false);
       }
@@ -77,83 +89,114 @@ export default function SermonsPage() {
   const onShare = async (title, videoId) => {
     try {
       const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
-      await Share.share({ message: `Watch this video: "${title}"\n${videoUrl}` });
+      await Share.share({ message: `Watch this: "${title}"\n${videoUrl}` });
     } catch (error) { console.log(error.message); }
   };
 
-  const renderSermon = useCallback(({ item }) => (
-    <View style={[styles.sermonCard, { backgroundColor: cardBg, borderColor: dynamicBorder }]}>
-      <View style={styles.videoWrapper}>
-        {/* 4. STEP 3: Offline Placeholder for the Player */}
-        {isOffline ? (
-          <View style={styles.offlineVideoPlaceholder}>
-             <Icon name="cloud-offline-outline" size={48} color="gold" />
-             <ThemedText style={styles.offlinePlaceholderText}>Connect to watch this sermon</ThemedText>
-          </View>
-        ) : (
-          <YoutubePlayer
-            height={210}
-            width={VIDEO_WIDTH}
-            videoId={item.videoId}
-            play={false}
-          />
-        )}
-      </View>
-      
-      <View style={styles.contentPadding}>
-        <ThemedText style={styles.titleText} numberOfLines={2}>{item.title}</ThemedText>
-        <ThemedText style={styles.descriptionText} numberOfLines={2}>
-            {item.description}
-        </ThemedText>
+  const renderSermon = useCallback(({ item, index }) => {
+    /** * THE PHANEROO FIX: 
+     * We create a window around the item. 
+     * As the scrollY passes this item's position, it scales up to 1.
+     * When it's far above or far below, it scales down.
+     */
+    const inputRange = [
+      (index - 1) * ITEM_SIZE,
+      index * ITEM_SIZE,
+      (index + 1) * ITEM_SIZE,
+    ];
 
-        <TouchableOpacity 
-          style={styles.shareAction} 
-          onPress={() => onShare(item.title, item.videoId)}
-        >
-          <Icon name="share-social" size={16} color="gold" />
-          <Text style={styles.shareText}>SHARE VIDEO</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  ), [isDark, isOffline]); // isOffline added to dependencies
+    const scale = scrollY.interpolate({
+      inputRange,
+      outputRange: [0.9, 1, 0.9],
+      extrapolate: 'clamp',
+    });
+
+    const opacity = scrollY.interpolate({
+      inputRange,
+      outputRange: [0.6, 1, 0.6],
+      extrapolate: 'clamp',
+    });
+
+    return (
+      <Animated.View style={[
+        styles.sermonCard, 
+        { 
+          backgroundColor: cardBg, 
+          borderColor: dynamicBorder,
+          opacity,
+          transform: [{ scale }] 
+        }
+      ]}>
+        <View style={styles.videoWrapper}>
+          {isOffline ? (
+            <View style={styles.offlineVideoPlaceholder}>
+               <Icon name="cloud-offline-outline" size={48} color="gold" />
+               <ThemedText style={styles.offlinePlaceholderText}>Connect to watch</ThemedText>
+            </View>
+          ) : (
+            <YoutubePlayer height={210} width={VIDEO_WIDTH} videoId={item.videoId} play={false} />
+          )}
+        </View>
+        
+        <View style={styles.contentPadding}>
+          <ThemedText style={styles.titleText} numberOfLines={2}>{item.title}</ThemedText>
+          <ThemedText style={styles.descriptionText} numberOfLines={2}>{item.description}</ThemedText>
+          <TouchableOpacity style={styles.shareAction} onPress={() => onShare(item.title, item.videoId)}>
+            <Icon name="share-social" size={16} color="gold" />
+            <Text style={styles.shareText}>SHARE VIDEO</Text>
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
+    );
+  }, [isDark, isOffline]);
 
   return (
     <ThemedView style={styles.root}>
-      <View style={[styles.headerSurface, { backgroundColor: headerBg, borderBottomColor: dynamicBorder }]}>
-        <SafeAreaView edges={['top']}>
+      <Animated.View style={[
+        styles.headerSurface, 
+        { 
+          height: headerHeight,
+          backgroundColor: headerBg, 
+          borderBottomColor: dynamicBorder,
+          zIndex: 100
+        }
+      ]}>
+        <SafeAreaView edges={['top']} style={{ flex: 1 }}>
           <View style={styles.headerArea}>
             <View style={styles.headerTopRow}>
-              <View>
+              <Animated.View style={{ opacity: textOpacity }}>
                 <ThemedText style={styles.mainTitle}>Videos</ThemedText>
                 <ThemedText style={styles.dateSubText}>Watch our latest videos</ThemedText>
-              </View>
+              </Animated.View>
               <CornerDropdown />
             </View>
-            <View style={styles.goldUnderline} />
+            <Animated.View style={[styles.goldUnderline, { opacity: textOpacity }]} />
           </View>
         </SafeAreaView>
-      </View>
+      </Animated.View>
 
       {loading ? (
         <View style={styles.loaderContainer}>
           <ActivityIndicator size="large" color="gold" />
-          <ThemedText style={{ marginTop: 10 }}>Loading Videos...</ThemedText>
-        </View>
-      ) : isOffline && videos.length === 0 ? (
-        // Case where user opens the app offline and has no cached videos
-        <View style={styles.loaderContainer}>
-          <Icon name="wifi-outline" size={50} color="gold" />
-          <ThemedText style={{ marginTop: 15, textAlign: 'center', paddingHorizontal: 40 }}>
-            Videos are unavailable while offline. Please check your connection.
-          </ThemedText>
         </View>
       ) : (
-        <FlatList
+        <Animated.FlatList
           data={videos}
           keyExtractor={(item) => item.id}
           renderItem={renderSermon}
-          contentContainerStyle={styles.listPadding}
+          contentContainerStyle={[styles.listPadding, { paddingTop: HEADER_MAX_HEIGHT + 20 }]}
           showsVerticalScrollIndicator={false}
+          
+          // PHYSICS FIX:
+          snapToAlignment="start"
+          decelerationRate="normal" // Changed from 'fast' to allow continuous scrolling
+          snapToInterval={ITEM_SIZE}
+          
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: false }
+          )}
+          scrollEventThrottle={16}
         />
       )}
     </ThemedView>
@@ -162,33 +205,27 @@ export default function SermonsPage() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  headerSurface: { borderBottomWidth: 1, elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
-  headerArea: { paddingHorizontal: 20, paddingBottom: 15, paddingTop: 10 },
-  headerTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  headerSurface: { position: 'absolute', top: 0, left: 0, right: 0, borderBottomWidth: 1, elevation: 4, zIndex: 100 },
+  headerArea: { paddingHorizontal: 20, flex: 1, justifyContent: 'center' },
+  headerTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   mainTitle: { fontSize: 32, fontWeight: '900', letterSpacing: -1, textTransform: 'uppercase' },
   dateSubText: { fontSize: 13, opacity: 0.6, fontWeight: '600', marginTop: 2 },
   goldUnderline: { height: 4, width: 40, backgroundColor: 'gold', marginTop: 8, borderRadius: 2 },
   loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  listPadding: { paddingBottom: 100, paddingTop: 20 },
-  sermonCard: { marginHorizontal: 20, marginBottom: 25, borderRadius: 12, borderWidth: 1, overflow: 'hidden', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 2 },
-  videoWrapper: { backgroundColor: '#000', height: 210 }, // Fixed height for consistency
-  
-  // 5. Placeholder Styles
-  offlineVideoPlaceholder: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#121212',
+  listPadding: { paddingBottom: 120 },
+  sermonCard: { 
+    marginHorizontal: 20, 
+    marginBottom: 25, 
+    borderRadius: 12, 
+    borderWidth: 1, 
+    overflow: 'hidden', 
+    elevation: 3,
+    // Ensure height is stable for animation
+    height: ITEM_SIZE - 25 
   },
-  offlinePlaceholderText: {
-    color: 'gold',
-    fontSize: 11,
-    fontWeight: '900',
-    textTransform: 'uppercase',
-    marginTop: 10,
-    opacity: 0.8
-  },
-
+  videoWrapper: { backgroundColor: '#000', height: 210 },
+  offlineVideoPlaceholder: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },
+  offlinePlaceholderText: { color: 'gold', fontSize: 11, fontWeight: '900', textTransform: 'uppercase', marginTop: 10, opacity: 0.8 },
   contentPadding: { padding: 18 },
   titleText: { fontSize: 18, fontWeight: '800', marginBottom: 8, lineHeight: 24 },
   descriptionText: { fontSize: 13, opacity: 0.6, lineHeight: 18, marginBottom: 18 },

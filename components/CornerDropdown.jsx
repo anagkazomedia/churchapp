@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+ import React, { useState, useContext } from 'react';
 import { StyleSheet, View, Share, Linking } from 'react-native';
 import { Menu, IconButton, Divider } from 'react-native-paper';
 import { useRouter } from 'expo-router';
@@ -42,7 +42,7 @@ const CornerDropdown = () => {
         
         {/* NEW: THEME SWITCH BUTTON */}
         <Menu.Item 
-          leadingIcon={isDark ? "sunny" : "moon-waning-crescent"} 
+          leadingIcon={isDark ? "weather-sunny" : "moon-waning-crescent"} 
           title={isDark ? "Light Mode" : "Dark Mode"} 
           titleStyle={{ color: theme.text, fontWeight: '700' }}
           onPress={() => {
