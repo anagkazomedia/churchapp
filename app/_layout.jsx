@@ -1,22 +1,19 @@
 import { Stack } from 'expo-router';
 import { Provider as PaperProvider } from 'react-native-paper';
 import React, { useContext, useState, useEffect } from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet, Platform, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import NetInfo from "@react-native-community/netinfo";
 
-// 1. Importing the service we created
-import { setupAllNotifications } from '../src/services/NotificationService';
-
-// 2. Context Providers
-import { UserProvider } from '../contexts/UserContext';
+// Context Providers
+import { UserProvider, UserContext } from '../contexts/UserContext';
 import { BooksProvider } from '../contexts/BooksContext';
 import { ThemeProvider, ThemeContext } from '../components/ThemedContext';
 import ThemedText from '../components/ThemedText';
+import { setupAllNotifications } from '../src/services/NotificationService';
 
 export default function RootLayout() {
   useEffect(() => {
-    // Schedules notifications and reminders
     setupAllNotifications();
   }, []);
 
@@ -33,26 +30,21 @@ export default function RootLayout() {
 
 function MainContent() {
   const { isDark } = useContext(ThemeContext);
+  // Using authChecked to ensure we've finished the session check
+  const { isLoading, authChecked } = useContext(UserContext) || { isLoading: true, authChecked: false }; 
   const [isOffline, setIsOffline] = useState(false);
-  const [showBanner, setShowBanner] = useState(false); // New state for the timer
+  const [showBanner, setShowBanner] = useState(false);
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener(state => {
       const isActuallyOffline = state.isConnected === false || state.isInternetReachable === false;
       
-      // If we are changing from ONLINE to OFFLINE, trigger the banner
       if (!isOffline && isActuallyOffline) {
         setShowBanner(true);
-        // Hide banner after 5 seconds
-        const timer = setTimeout(() => {
-          setShowBanner(false);
-        }, 5000);
-        
-        // Cleanup timer if component unmounts
+        const timer = setTimeout(() => setShowBanner(false), 5000);
         return () => clearTimeout(timer);
       }
 
-      // If we go back online, hide banner and restore full app
       if (!isActuallyOffline) {
         setShowBanner(false);
       }
@@ -60,7 +52,16 @@ function MainContent() {
       setIsOffline(isActuallyOffline);
     });
     return () => unsubscribe();
-  }, [isOffline]); // Dependency on isOffline ensures we detect the transition
+  }, [isOffline]);
+
+  // If the context is still busy checking for a session, show the loader
+  if (isLoading && !authChecked) {
+    return (
+      <View style={[styles.loadingContainer, { backgroundColor: isDark ? '#000' : '#FFF' }]}>
+        <ActivityIndicator size="large" color="#E74C3C" />
+      </View>
+    );
+  }
 
   return (
     <PaperProvider>
@@ -70,7 +71,6 @@ function MainContent() {
         {isOffline ? (
           /* --- OFFLINE MODE: BIBLE ONLY --- */
           <View style={{ flex: 1 }}>
-            {/* Banner appears only when showBanner is true (the first 5 seconds) */}
             {showBanner && (
               <View style={[styles.offlineBanner, { position: 'relative', backgroundColor: isDark ? '#8B0000' : '#E74C3C' }]}>
                 <ThemedText style={styles.offlineText}>
@@ -80,16 +80,11 @@ function MainContent() {
             )}
             
             <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen 
-                name="dashboard/Bible" 
-                options={{ 
-                  title: 'Bible',
-                }} 
-              />
+              <Stack.Screen name="dashboard/Bible" options={{ title: 'Bible' }} />
             </Stack>
           </View>
         ) : (
-          /* --- ONLINE MODE: FULL APP --- */
+          /* --- ONLINE MODE: FULL APP (Optional Login) --- */
           <Stack 
             screenOptions={{ 
               headerShown: false,
@@ -103,6 +98,11 @@ function MainContent() {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   offlineBanner: {
     paddingTop: Platform.OS === 'ios' ? 60 : 45, 
     paddingBottom: 15,

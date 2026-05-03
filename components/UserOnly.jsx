@@ -7,18 +7,15 @@ const UserOnly = ({ children }) => {
     const { user, authChecked } = useUser()
     const router = useRouter()
 
-    useEffect(() => {
-        if (authChecked && user === null) {
-            router.replace('../../auth/register')
-        }
-    }, [user, authChecked])
+    // REMOVED: The useEffect that forces a redirect to /register
 
-    if (!authChecked || !user) {
-        return (
-            <ThemedLoader />
-        )
+    if (!authChecked) {
+        return <ThemedLoader />
     }
 
+    // IMPROVEMENT: We now return children regardless of whether 'user' exists.
+    // The component now simply ensures that we've at least CHECKED the auth status
+    // before showing the UI, preventing "flicker."
     return children
 }
 

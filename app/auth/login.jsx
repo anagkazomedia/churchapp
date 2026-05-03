@@ -1,9 +1,9 @@
-import { StyleSheet, Pressable, Text, TextInput, Keyboard, TouchableWithoutFeedback, ActivityIndicator, View, TouchableOpacity } from 'react-native' // Added View, TouchableOpacity
-import { Link } from 'expo-router'
+import { StyleSheet, Pressable, Text, TextInput, Keyboard, TouchableWithoutFeedback, ActivityIndicator, View, TouchableOpacity } from 'react-native'
+import { Link, useRouter } from 'expo-router' // Added useRouter
 import { Colors } from '../../constants/Colors'
 import { useState } from 'react'
 import { useUser } from '../../hooks/useUser'
-import { Ionicons } from '@expo/vector-icons' // Added Ionicons
+import { Ionicons } from '@expo/vector-icons'
 
 //themed components
 import ThemedView from '../../components/ThemedView'
@@ -13,6 +13,7 @@ import ThemedButton from '../../components/ThemedButton'
 import ThemedTextInput from '../../components/ThemedTextInput'
 
 const Login = () => {
+    const router = useRouter(); // Initialize router for the back button
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
     const togglePasswordVisibility = () => {
@@ -48,6 +49,15 @@ const Login = () => {
     return (
         <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()} >
             <ThemedView style={styles.container}>
+                
+                {/* BACK BUTTON */}
+                <TouchableOpacity 
+                    onPress={() => router.back()} 
+                    style={styles.backButton}
+                >
+                    <Ionicons name="arrow-back" size={28} color="gold" />
+                </TouchableOpacity>
+
                 <Spacer />
                 <ThemedText title={true} style={styles.title}>
                     Login to your account
@@ -61,20 +71,18 @@ const Login = () => {
                     value={email}
                 />
 
-                {/* FIX: Wrapped in a View to position the eye icon */}
                 <View style={{ width: '80%', justifyContent: 'center' }}>
                     <ThemedTextInput
                         style={{ width: '100%', marginBottom: 20 }}
                         placeholder="password"
                         onChangeText={setPassword}
                         value={password}
-                        // FIX: Use the dynamic state here
                         secureTextEntry={!isPasswordVisible}
                     />
                     <TouchableOpacity
                         onPress={togglePasswordVisibility}
-                        style={{ position: 'absolute', right: 15, top: 15 }} // Adjusted to sit inside the input
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} // IMPROVEMENT: Makes it easier to tap
+                        style={{ position: 'absolute', right: 15, top: 15 }}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     >
                         <Ionicons
                             name={isPasswordVisible ? 'eye-outline' : 'eye-off-outline'}
@@ -110,6 +118,14 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: "center",
         alignItems: 'center'
+    },
+    // New Style for Back Button
+    backButton: {
+        position: 'absolute',
+        top: 60, // Safe area for most mobile devices
+        left: 20,
+        zIndex: 10,
+        padding: 5
     },
     title: {
         textAlign: "center",

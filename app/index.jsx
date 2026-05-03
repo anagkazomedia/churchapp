@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
-import * as Notifications from 'expo-notifications'; // ADD THIS IMPORT
+import * as Notifications from 'expo-notifications';
 
 // Logic & Storage
 import { account } from '../lib/appwrite'; 
@@ -27,30 +27,30 @@ if (Constants.appOwnership !== 'expo') {
 
 const Index = () => {
   const router = useRouter();
-  const [checkingSession, setCheckingSession] = useState(true);
+  const [statusMessage, setStatusMessage] = useState("Initializing...");
 
   useEffect(() => {
     const initializeApp = async () => {
       // 1. Run Youtube Logic
       try {
-          await checkYoutube(); // Added await for stability
+          await checkYoutube();
           await registerBackgroundCheck(); 
       } catch (e) {
           console.warn("Service initialization failed:", e);
       }
 
-      // 2. CHECK LOGIN STATUS
+      // 2. ENTRY LOGIC (Modified for Optional Login)
       try {
+        // We still check for a user to see if a session exists
         const user = await account.get(); 
-        if (user) {
-          // Go to Dashboard Home (or profile if you prefer)
-          router.replace('/dashboard/Home'); 
-        }
+        console.log("Welcome back,", user.name);
       } catch (error) {
-        console.log("No active session found.");
-        router.replace('/auth/login'); 
+        // If this fails, it's fine! It just means they are a guest.
+        console.log("Continuing as Guest Mode.");
       } finally {
-        setCheckingSession(false);
+        // FIXED: Instead of redirecting to /auth/login on error, 
+        // we send EVERYONE to the Home dashboard.
+        router.replace('/dashboard/Home'); 
       }
     };
 
@@ -67,9 +67,8 @@ const Index = () => {
         Anagkazo
       </ThemedText>
       
-      {checkingSession && (
-        <ActivityIndicator size="small" color="gold" style={{ marginTop: 20 }} />
-      )}
+      {/* Visual feedback that the app is loading */}
+      <ActivityIndicator size="small" color="gold" style={{ marginTop: 20 }} />
     </ThemedView>
   );
 };

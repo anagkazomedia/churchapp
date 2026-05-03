@@ -1,8 +1,8 @@
-import { StyleSheet, Text, TouchableWithoutFeedback, Keyboard, View, TouchableOpacity } from 'react-native' // Added View, TouchableOpacity
-import { Link } from 'expo-router'
+import { StyleSheet, Text, TouchableWithoutFeedback, Keyboard, View, TouchableOpacity } from 'react-native' 
+import { Link, useRouter } from 'expo-router' // Added useRouter
 import { useState } from 'react'
 import { Colors }  from '../../constants/Colors'
-import { Ionicons } from '@expo/vector-icons' // Added Ionicons
+import { Ionicons } from '@expo/vector-icons'
 
 //themed components
 import ThemedView from '../../components/ThemedView'
@@ -13,6 +13,7 @@ import ThemedTextInput from '../../components/ThemedTextInput'
 import { useUser } from '../../hooks/useUser'
 
 const Register = () => {
+    const router = useRouter(); // Initialize router for the back button
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
     const togglePasswordVisibility = () => {
@@ -28,7 +29,6 @@ const Register = () => {
     const handleSubmit = async() => {
         setError(null)
         try {
-            // IMPROVEMENT: Added .trim() to email to prevent "poorly put info" errors
             await register(email.trim(), password)
         } catch (error) {
             const rawMessage = error.message.toLowerCase();
@@ -51,6 +51,15 @@ const Register = () => {
   return (
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
       <ThemedView style={styles.container}>
+        
+        {/* BACK BUTTON */}
+        <TouchableOpacity 
+            onPress={() => router.back()} 
+            style={styles.backButton}
+        >
+            <Ionicons name="arrow-back" size={28} color="gold" />
+        </TouchableOpacity>
+
         <Spacer />
         <ThemedText title={true} style={styles.title}>
             Register for an account
@@ -60,19 +69,17 @@ const Register = () => {
             style={{ width: '80%', marginBottom: 20}}
             placeholder="email" 
             keyboardType="email-address"
-            autoCapitalize="none" // FIX: Important for registration reliability
+            autoCapitalize="none" 
             onChangeText={setEmail}
             value={email}
         />
 
-        {/* FIX: Wrapper View for the Password Toggle */}
         <View style={{ width: '80%', justifyContent: 'center' }}>
             <ThemedTextInput 
                 style={{ width: '100%', marginBottom: 20}}
                 placeholder="password" 
                 onChangeText={setPassword}
                 value={password}
-                // FIX: State-driven visibility
                 secureTextEntry={!isPasswordVisible}
             />
             <TouchableOpacity 
@@ -113,6 +120,14 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: "center",
         alignItems: 'center'
+    },
+    // Same Back Button style as Login page
+    backButton: {
+        position: 'absolute',
+        top: 60, 
+        left: 20,
+        zIndex: 10,
+        padding: 5
     },
     title: {
         textAlign: "center",
