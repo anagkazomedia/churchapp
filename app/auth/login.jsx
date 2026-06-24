@@ -1,152 +1,88 @@
-import { StyleSheet, Pressable, Text, TextInput, Keyboard, TouchableWithoutFeedback, ActivityIndicator, View, TouchableOpacity } from 'react-native'
-import { Link, useRouter } from 'expo-router' // Added useRouter
-import { Colors } from '../../constants/Colors'
-import { useState } from 'react'
-import { useUser } from '../../hooks/useUser'
-import { Ionicons } from '@expo/vector-icons'
-
-//themed components
-import ThemedView from '../../components/ThemedView'
-import Spacer from '../../components/Spacer'
-import ThemedText from '../../components/ThemedText'
-import ThemedButton from '../../components/ThemedButton'
-import ThemedTextInput from '../../components/ThemedTextInput'
+import React, { useState } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, ActivityIndicator, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import { Link, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useUser } from '../../hooks/useUser';
+import ThemedView from '../../components/ThemedView';
+import ThemedText from '../../components/ThemedText';
+import ThemedButton from '../../components/ThemedButton';
+import ThemedTextInput from '../../components/ThemedTextInput';
+import { Colors } from '../../constants/Colors';
 
 const Login = () => {
-    const router = useRouter(); // Initialize router for the back button
-    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+    const router = useRouter();
+    const { login } = useUser();
+    
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-    const togglePasswordVisibility = () => {
-        setIsPasswordVisible(!isPasswordVisible);
+    const handleLogin = async () => {
+        if (!email || !password) {
+            setError("Please fill in all fields.");
+            return;
+        }
+        
+        setError(null);
+        setLoading(true);
+        try {
+            await login(email.trim(), password);
+            router.replace('/dashboard/Home');
+        } catch (err) {
+            console.log("Login Error Details:", err.response?.data);
+            setError(err.response?.data?.detail || "Invalid email or password.");
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
-    const [error, setError] = useState(null)
-
-    const { login } = useUser()
-
-    const handleSubmit = async () => {
-        setError(null)
-        try {
-            await login(email, password)
-        } catch (error) {
-            const rawMessage = error.message.toLowerCase();
-            let friendlyMessage = "Incorrect email or password.";
-            if (rawMessage.includes('invalid-credential') || rawMessage.includes('wrong-password')) {
-                friendlyMessage = "Incorrect email or password.";
-            } else if (rawMessage.includes('network')) {
-                friendlyMessage = "Check your internet connection.";
-            } else if (rawMessage.includes('too-many-requests')) {
-                friendlyMessage = "Too many attempts. Try again later.";
-            } else if (rawMessage.includes('user-not-found')) {
-                friendlyMessage = "No account found with this email.";
-            }
-            setError(friendlyMessage)
-        }
-    }
-
     return (
-        <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()} >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <ThemedView style={styles.container}>
-                
-                {/* BACK BUTTON */}
-                <TouchableOpacity 
-                    onPress={() => router.back()} 
-                    style={styles.backButton}
-                >
+                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={28} color="gold" />
                 </TouchableOpacity>
 
-                <Spacer />
-                <ThemedText title={true} style={styles.title}>
-                    Login to your account
-                </ThemedText>
+                <ThemedText title={true} style={styles.title}>Login</ThemedText>
 
                 <ThemedTextInput
-                    style={{ width: '80%', marginBottom: 20 }}
                     placeholder="email"
                     keyboardType="email-address"
+                    autoCapitalize="none"
                     onChangeText={setEmail}
                     value={email}
+                    style={styles.input}
                 />
 
-                <View style={{ width: '80%', justifyContent: 'center' }}>
-                    <ThemedTextInput
-                        style={{ width: '100%', marginBottom: 20 }}
-                        placeholder="password"
-                        onChangeText={setPassword}
-                        value={password}
-                        secureTextEntry={!isPasswordVisible}
-                    />
-                    <TouchableOpacity
-                        onPress={togglePasswordVisibility}
-                        style={{ position: 'absolute', right: 15, top: 15 }}
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    >
-                        <Ionicons
-                            name={isPasswordVisible ? 'eye-outline' : 'eye-off-outline'}
-                            size={22}
-                            color={Colors.gray || '#888'}
-                        />
-                    </TouchableOpacity>
-                </View>
+                <ThemedTextInput
+                    placeholder="password"
+                    secureTextEntry
+                    onChangeText={setPassword}
+                    value={password}
+                    style={styles.input}
+                />
 
-                <ThemedButton onPress={handleSubmit}>
-                    <Text style={{ color: '#f2f2f2' }}> log In</Text>
+                <ThemedButton onPress={handleLogin} disabled={loading}>
+                    {loading ? <ActivityIndicator color="#fff" /> : <Text style={{color: '#fff'}}>Log In</Text>}
                 </ThemedButton>
 
-                <Spacer />
                 {error && <Text style={styles.error}>{error}</Text>}
 
-                <Spacer height={100} />
-                <Link href='./register'>
-                    <ThemedText style={{ textAlign: 'center' }}>
-                        Register Account
-                    </ThemedText>
+                <Link href='/auth/register' style={{marginTop: 20}}>
+                    <ThemedText>Need an account? Register</ThemedText>
                 </Link>
-
             </ThemedView>
         </TouchableWithoutFeedback>
-    )
-}
-
-export default Login
+    );
+};
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: 'center'
-    },
-    // New Style for Back Button
-    backButton: {
-        position: 'absolute',
-        top: 60, // Safe area for most mobile devices
-        left: 20,
-        zIndex: 10,
-        padding: 5
-    },
-    title: {
-        textAlign: "center",
-        fontSize: 18,
-        marginBottom: 30
-    },
-    btn: {
-        backgroundColor: Colors.primary,
-        padding: 15,
-        borderRadius: 5,
-    },
-    pressed: {
-        opacity: 0.8
-    },
-    error: {
-        color: Colors.warning,
-        padding: 10,
-        backgroundColor: '#f5c1c8',
-        borderColor: Colors.warning,
-        borderWidth: 1,
-        borderRadius: 6,
-        marginHorizontal: 10,
-    }
-})
+    container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    backButton: { position: 'absolute', top: 60, left: 20 },
+    title: { fontSize: 22, marginBottom: 30 },
+    input: { width: '80%', marginBottom: 20 },
+    error: { color: 'red', marginTop: 10, textAlign: 'center' }
+});
+
+export default Login;

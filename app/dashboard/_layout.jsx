@@ -9,8 +9,6 @@ const DashboardLayout = () => {
   const { isDark } = useContext(ThemeContext);
   const insets = useSafeAreaInsets();
 
-  const theme = isDark ? (Colors?.dark || { iconColor: '#888' }) : (Colors?.light || { iconColor: '#666' });
-
   return (
     <Tabs
         screenOptions={{ 
@@ -51,7 +49,7 @@ const DashboardLayout = () => {
         <Tabs.Screen 
             name="books" 
             options={{ 
-                title: 'Videos', 
+                title: 'Watch', 
                 tabBarIcon: ({ focused }) => (
                     <Ionicons
                         size={24}
@@ -64,11 +62,12 @@ const DashboardLayout = () => {
         <Tabs.Screen 
             name="create" 
             options={{ 
-                title: 'Donate', 
+                title: 'Devotions', 
                 tabBarIcon: ({ focused }) => (
                     <Ionicons
                         size={24}
-                        name={focused ? 'gift' : 'gift-outline'}
+                        // 'book' is the standard Ionicons icon for Devotions
+                        name={focused ? 'book' : 'book-outline'}
                         color={focused ? 'gold' : (isDark ? '#888' : '#666')}  
                     />
                 ) 
@@ -81,21 +80,8 @@ const DashboardLayout = () => {
                 tabBarIcon: ({ focused }) => (
                     <Ionicons
                         size={24}
-                        name={focused ? 'book' : 'book-outline'}
+                        name={focused ? 'library' : 'library-outline'}
                         color={focused ? 'gold' : (isDark ? '#888' : '#666')}  
-                    />
-                ) 
-            }} 
-         />
-        <Tabs.Screen 
-            name="profile" 
-            options={{ 
-                title: 'Profile', 
-                tabBarIcon: ({ focused }) => (
-                    <Ionicons 
-                        size={24}
-                        name={focused ? 'person' : 'person-outline'}
-                        color={focused ? 'gold' : (isDark ? '#888' : '#666')}
                     />
                 ) 
             }} 

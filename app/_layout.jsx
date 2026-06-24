@@ -30,8 +30,8 @@ export default function RootLayout() {
 
 function MainContent() {
   const { isDark } = useContext(ThemeContext);
-  // Using authChecked to ensure we've finished the session check
-  const { isLoading, authChecked } = useContext(UserContext) || { isLoading: true, authChecked: false }; 
+  // Ensure your UserContext provides 'isLoading'
+  const { isLoading } = useContext(UserContext) || { isLoading: true }; 
   const [isOffline, setIsOffline] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
 
@@ -54,8 +54,8 @@ function MainContent() {
     return () => unsubscribe();
   }, [isOffline]);
 
-  // If the context is still busy checking for a session, show the loader
-  if (isLoading && !authChecked) {
+  // Loading indicator while the JWT check happens in UserProvider
+  if (isLoading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: isDark ? '#000' : '#FFF' }]}>
         <ActivityIndicator size="large" color="#E74C3C" />
@@ -69,22 +69,21 @@ function MainContent() {
         <StatusBar style={isDark ? 'light' : 'dark'} animated={true} />
         
         {isOffline ? (
-          /* --- OFFLINE MODE: BIBLE ONLY --- */
+          /* --- OFFLINE MODE: Bible Only --- */
           <View style={{ flex: 1 }}>
             {showBanner && (
-              <View style={[styles.offlineBanner, { position: 'relative', backgroundColor: isDark ? '#8B0000' : '#E74C3C' }]}>
+              <View style={[styles.offlineBanner, { backgroundColor: isDark ? '#8B0000' : '#E74C3C' }]}>
                 <ThemedText style={styles.offlineText}>
                   Offline Mode: Bible Access Only
                 </ThemedText>
               </View>
             )}
-            
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="dashboard/Bible" options={{ title: 'Bible' }} />
             </Stack>
           </View>
         ) : (
-          /* --- ONLINE MODE: FULL APP (Optional Login) --- */
+          /* --- ONLINE MODE: Full Navigation --- */
           <Stack 
             screenOptions={{ 
               headerShown: false,

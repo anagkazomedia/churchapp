@@ -1,19 +1,25 @@
-import { Stack } from "expo-router"
-import { StatusBar } from "react-native"
-import { useUser } from "../../hooks/useUser"
-import GuestOnly from "../../components/GuestOnly"
+import { Stack } from "expo-router";
+import { StatusBar } from "react-native";
+import { useUser } from "../../hooks/useUser";
+import GuestOnly from "../../components/GuestOnly";
 
 export default function AuthLayout() {
-
-    const { user} = useUser()
-    console.log(user)
+    // The useUser hook will now pull from SecureStore 
+    // to determine if a session exists.
+    const { user } = useUser();
 
     return (
         <GuestOnly>
-            <StatusBar style="auto" />
+            {/* StatusBar style='auto' will automatically switch 
+               between light/dark based on the system theme. 
+            */}
+            <StatusBar barStyle="default" />
             <Stack
-                screenOptions={{ headerShown: false, animation: "none" }} 
+                screenOptions={{ 
+                    headerShown: false, 
+                    animation: "none" 
+                }} 
             />
         </GuestOnly>
-    )
+    );
 }

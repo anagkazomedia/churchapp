@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Anagkazo",
+    "name": "Anagkazo Eagles",
     "slug": "anagkazo-app",
     "version": "1.0.4",
     "orientation": "portrait",
@@ -17,6 +17,7 @@
     },
     "android": {
       "package": "com.churchapp.anagkazo",
+      "usesCleartextTraffic": true,
       "versionCode": 1,
       "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
@@ -24,7 +25,9 @@
         "backgroundColor": "#000000"
       },
       "permissions": [
-        "NOTIFICATIONS"
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.POST_NOTIFICATIONS"
       ]
     },
     "web": {
@@ -36,6 +39,7 @@
       "expo-font",
       "expo-secure-store",
       "expo-notifications"
+      
     ],
     "assetBundlePatterns": [
       "**/*"

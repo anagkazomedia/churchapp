@@ -67,8 +67,8 @@ export async function setupAllNotifications() {
     // --- D. DONATION REMINDER (Saturday 6:00 PM) ---
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: "Invest in the Kingdom ✨",
-        body: "Your support helps us reach more souls. Remember to set aside your donation today for the house.",
+        title: "Sunday service Tomorrow ✨",
+        body: "Join us for Sunday service tomorrow! for a powerful word and fellowship.",
       },
       trigger: { 
         type: 'weekly',

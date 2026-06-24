@@ -3,6 +3,7 @@ import {
   StyleSheet, View, ScrollView, TouchableOpacity, 
   Linking, Image, Platform 
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
@@ -11,33 +12,37 @@ import ThemedText from '../components/ThemedText';
 import Spacer from '../components/Spacer';
 import { ThemeContext } from '../components/ThemedContext';
 
+// Mission Data (No icons)
+const CORE_VALUES = [
+  { title: "Bible-Centred", desc: "Scripture is the foundation of everything we do — shaping how we live, lead and love." },
+  { title: "Christ-like Love", desc: "We meet people with grace, compassion and dignity, just as Jesus did." },
+  { title: "Community", desc: "We grow stronger together, walking alongside one another in faith and friendship." },
+  { title: "Servant Leadership", desc: "We lead by serving — humbly, faithfully and with the next generation in mind." },
+  { title: "Integrity", desc: "We do what is right when no one is watching, honouring God in word and deed." },
+  { title: "Mission-Minded", desc: "We carry the hope of the Gospel beyond walls — into homes, schools and streets." },
+];
+
 export default function AboutPage() {
+  const router = useRouter();
   const { isDark } = useContext(ThemeContext);
 
   const headerBg = isDark ? '#121212' : '#F0F0F3'; 
   const cardBg = isDark ? '#1A1A1A' : '#FFFFFF';
   const dynamicBorder = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
 
-  const openLink = (url) => {
-    if (!url) return; // Guard against empty links
-    Linking.openURL(url).catch((err) => console.error("URL Error", err));
-  };
-
+  const openLink = (url) => Linking.openURL(url).catch((err) => console.error(err));
   const openMaps = () => {
     const address = "St. Julian High School Gayaza";
-    const url = Platform.select({
-      ios: `maps:0,0?q=${address}`,
-      android: `geo:0,0?q=${address}`,
-    });
+    const url = Platform.select({ ios: `maps:0,0?q=${address}`, android: `geo:0,0?q=${address}` });
     Linking.openURL(url);
   };
 
   return (
     <ThemedView style={{ flex: 1 }}>
-      {/* HEADER */}
       <View style={[styles.headerSurface, { backgroundColor: headerBg, borderBottomColor: dynamicBorder }]}>
         <SafeAreaView edges={['top']}>
           <View style={styles.headerArea}>
+            <TouchableOpacity onPress={() => router.back()} style={{marginBottom: 10}}><Icon name="arrow-back" size={24} color="gold" /></TouchableOpacity>
             <ThemedText style={styles.mainTitle}>About Us</ThemedText>
             <View style={styles.goldUnderline} />
           </View>
@@ -45,70 +50,72 @@ export default function AboutPage() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        
-        {/* BRANDING SECTION */}
+        {/* Branding */}
         <View style={styles.brandSection}>
           <View style={[styles.logoContainer, { borderColor: 'gold' }]}>
-             <Image 
-                source={require('../assets/anagkazo-logo.png')} 
-                style={styles.logoImage}
-                resizeMode="contain"
-             />
+             <Image source={require('../assets/anagkazo-logo.png')} style={styles.logoImage} resizeMode="contain" />
           </View>
           <ThemedText style={styles.appName}>ANAGKAZO</ThemedText>
-          <ThemedText style={styles.versionText}>Version 1.0.4</ThemedText>
         </View>
 
-        {/* MISSION CARD */}
+        {/* Mission/Vision */}
         <View style={[styles.infoCard, { backgroundColor: cardBg, borderColor: dynamicBorder }]}>
-          <ThemedText style={styles.cardHeading}>Our Mission</ThemedText>
+          <ThemedText style={styles.cardHeading}>Our Mission & Vision</ThemedText>
           <ThemedText style={styles.cardBody}>
-            Welcome to Anagkazo Eagles fellowship. Our mission is to reach the world 
-            with the gospel through the intersection of technology and faith, 
-            making the Word of God accessible to all, everywhere. Luke 14:23
+            Ministering Mercy, Compelling Souls, Growing them Into Winners. Reaching out to nations with God’s message of Love and influence transforming communities.
           </ThemedText>
         </View>
 
-        {/* LOCATION SECTION */}
-        <View style={[styles.infoCard, { backgroundColor: cardBg, borderColor: dynamicBorder }]}>
-          <View style={styles.rowTitle}>
-            <Icon name="location-sharp" size={18} color="gold" />
-            <ThemedText style={[styles.cardHeading, { marginLeft: 8, marginBottom: 0 }]}>Find Us</ThemedText>
+        {/* Core Values */}
+        <ThemedText style={styles.sectionHeading}>Core Values</ThemedText>
+        {CORE_VALUES.map((v, i) => (
+          <View key={i} style={[styles.infoCard, { backgroundColor: cardBg, borderColor: dynamicBorder }]}>
+            <ThemedText style={styles.cardHeading}>{v.title}</ThemedText>
+            <ThemedText style={styles.cardBody}>{v.desc}</ThemedText>
           </View>
-          <Spacer size={10} />
-          <ThemedText style={styles.cardBody}>
-            Anagkazo Eagles Fellowship{"\n"}
-            St. Julian High School Gayaza{"\n"}
-            Kampala, Uganda
-          </ThemedText>
+        ))}
+
+        {/* Location Section */}
+        <View style={[styles.infoCard, { backgroundColor: cardBg, borderColor: dynamicBorder }]}>
+          <ThemedText style={styles.cardHeading}>Find Us</ThemedText>
+          <ThemedText style={styles.cardBody}>Anagkazo Eagles Fellowship, St. Julian High School Gayaza, Kampala, Uganda</ThemedText>
           <Spacer size={15} />
           <TouchableOpacity style={styles.mapButton} onPress={openMaps}>
-             <Icon name="map-outline" size={16} color="#000" />
              <ThemedText style={styles.mapButtonText}>GET DIRECTIONS</ThemedText>
           </TouchableOpacity>
         </View>
 
-        {/* LINKS */}
-        <View style={styles.linkSection}>
-          <TouchableOpacity style={styles.linkRow} onPress={() => openLink('https://phaneroo.org')}>
-            <Icon name="globe-outline" size={20} color="gold" />
-            <ThemedText style={styles.linkText}>Official Website</ThemedText>
-            <Icon name="chevron-forward" size={16} color="#666" />
-          </TouchableOpacity>
+        {/* Links */}
+        <TouchableOpacity style={styles.linkRow} onPress={() => openLink('http://anagkazobackend-production.up.railway.app')}>
+          <ThemedText style={styles.linkText}>Official Website</ThemedText>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.linkRow} onPress={() => openLink('mailto:anagkazomedia23@gmail.com')}>
+          <ThemedText style={styles.linkText}>Contact Support</ThemedText>
+        </TouchableOpacity>
 
-          {/* FIX: Opens Gmail/Email App directly */}
-          <TouchableOpacity style={styles.linkRow} onPress={() => openLink('mailto:anagkazomedia23@gmail.com')}>
-            <Icon name="mail-outline" size={20} color="gold" />
-            <ThemedText style={styles.linkText}>Contact Support</ThemedText>
-            <Icon name="chevron-forward" size={16} color="#666" />
-          </TouchableOpacity>
-        </View>
+        {/* Legal Links */}
+       {/* Legal Links */}
+        <TouchableOpacity 
+          style={styles.linkRow} 
+          onPress={() => openLink('https://raw.githubusercontent.com/markxstar2-wq/Anagkazo-Legal-Docs/refs/heads/main/Disclaimer.md')}
+        >
+          <ThemedText style={styles.linkText}>Disclaimer</ThemedText>
+        </TouchableOpacity>
 
-        <Spacer size={40} />
-        
-        <ThemedText style={styles.copyrightText}>
-          © 2026 Anagkazo Ministry. All rights reserved.
-        </ThemedText>
+        <TouchableOpacity 
+          style={styles.linkRow} 
+          onPress={() => openLink('https://raw.githubusercontent.com/markxstar2-wq/Anagkazo-Legal-Docs/refs/heads/main/PRIVACY_POLICY.md')}
+        >
+          <ThemedText style={styles.linkText}>Privacy Policy</ThemedText>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.linkRow} 
+          onPress={() => openLink('https://raw.githubusercontent.com/markxstar2-wq/Anagkazo-Legal-Docs/refs/heads/main/Terms%20of%20use.md')}
+        >
+          <ThemedText style={styles.linkText}>Terms of Use</ThemedText>
+        </TouchableOpacity>
+
         <Spacer size={100} />
       </ScrollView>
     </ThemedView>
@@ -118,49 +125,19 @@ export default function AboutPage() {
 const styles = StyleSheet.create({
   headerSurface: { borderBottomWidth: 1, elevation: 4 },
   headerArea: { paddingHorizontal: 20, paddingBottom: 15, paddingTop: 10 },
-  mainTitle: { fontSize: 32, fontWeight: '900', letterSpacing: -1, textTransform: 'uppercase' },
+  mainTitle: { fontSize: 32, fontWeight: '900', textTransform: 'uppercase' },
   goldUnderline: { height: 4, width: 40, backgroundColor: 'gold', marginTop: 8, borderRadius: 2 },
-  
   scrollContent: { padding: 25 },
   brandSection: { alignItems: 'center', marginVertical: 20 },
-  
-  logoContainer: { 
-    width: 150, 
-    height: 150, 
-    borderRadius: 75, 
-    borderWidth: 3, 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    marginBottom: 20,
-    overflow: 'hidden',
-    backgroundColor: '#fff' 
-  },
-  logoImage: {
-    width: '100%',
-    height: '100%',
-  },
-
+  logoContainer: { width: 150, height: 150, borderRadius: 75, borderWidth: 3, justifyContent: 'center', alignItems: 'center', marginBottom: 20, backgroundColor: '#fff', overflow: 'hidden' },
+  logoImage: { width: '100%', height: '100%' },
   appName: { fontSize: 26, fontWeight: '900', letterSpacing: 3 },
-  versionText: { fontSize: 13, opacity: 0.5, fontWeight: '700', marginTop: 5 },
-  
+  sectionHeading: { fontSize: 20, fontWeight: '900', color: 'gold', marginVertical: 15 },
   infoCard: { padding: 22, borderRadius: 12, borderWidth: 1, marginBottom: 25 },
-  rowTitle: { flexDirection: 'row', alignItems: 'center' },
-  cardHeading: { fontSize: 16, fontWeight: '900', color: 'gold', textTransform: 'uppercase', marginBottom: 10 },
+  cardHeading: { fontSize: 16, fontWeight: '900', color: 'gold', marginBottom: 8 },
   cardBody: { fontSize: 15, lineHeight: 24, opacity: 0.8 },
-  
-  mapButton: { 
-    backgroundColor: 'gold', 
-    flexDirection: 'row', 
-    padding: 12, 
-    borderRadius: 12, 
-    justifyContent: 'center', 
-    alignItems: 'center',
-    gap: 8
-  },
-  mapButtonText: { color: '#000', fontWeight: '900', fontSize: 12 },
-
-  linkSection: { gap: 5 },
-  linkRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: 'rgba(128,128,128,0.1)' },
-  linkText: { flex: 1, marginLeft: 15, fontSize: 15, fontWeight: '600' },
-  copyrightText: { textAlign: 'center', fontSize: 11, opacity: 0.4, fontWeight: '700', textTransform: 'uppercase' }
+  mapButton: { backgroundColor: 'gold', padding: 12, borderRadius: 12, alignItems: 'center' },
+  mapButtonText: { color: '#000', fontWeight: '900' },
+  linkRow: { paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: 'rgba(128,128,128,0.1)' },
+  linkText: { fontSize: 15, fontWeight: '600' }
 });

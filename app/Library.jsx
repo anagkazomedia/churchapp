@@ -1,25 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  StyleSheet, View, FlatList, TouchableOpacity, 
-  ActivityIndicator, Alert, Linking, RefreshControl, TextInput 
-} from 'react-native';
+import React, { useState, useEffect, useContext } from 'react';
+import { StyleSheet, View, FlatList, TouchableOpacity, TextInput, ActivityIndicator, Image } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Menu, Button } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
-// Import your Appwrite config
-import { storage, BUCKET_ID } from '../lib/appwrite';
-import ThemedView from '../components/ThemedView'; 
+import api from '../src/services/api'; 
+import ThemedView from '../components/ThemedView';
 import ThemedText from '../components/ThemedText';
+import { ThemeContext } from '../components/ThemedContext';
 
-export default function BooksScreen() {
+export default function LibraryScreen() {
   const [books, setBooks] = useState([]);
-  const [filteredBooks, setFilteredBooks] = useState([]); // ✅ For search results
+  const [filteredBooks, setFilteredBooks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [searchText, setSearchText] = useState(''); // ✅ Search state
+  const [search, setSearch] = useState('');
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState('All');
 
-  const PROJECT_ID = '694512df0028c4ddf6c7'; 
-  const ENDPOINT = 'https://cloud.appwrite.io/v1'; 
+  const { isDark } = useContext(ThemeContext);
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
 
   useEffect(() => {
     fetchBooks();
@@ -27,148 +27,113 @@ export default function BooksScreen() {
 
   const fetchBooks = async () => {
     try {
-      const response = await storage.listFiles(BUCKET_ID);
-      
-      // ✅ SORTING: Newest books appear at the top
-      const sorted = response.files.sort((a, b) => 
-        new Date(b.$createdAt) - new Date(a.$createdAt)
-      );
-      
-      setBooks(sorted);
-      setFilteredBooks(sorted); // Initialize filtered list
+      const response = await api.get('api/books/');
+      setBooks(response.data);
+      setFilteredBooks(response.data);
     } catch (error) {
-      Alert.alert("Error", "Library connection failed.");
+      console.error("Error fetching books:", error);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   };
 
-  // ✅ SEARCH LOGIC: Filter list based on text input
-  const handleSearch = (text) => {
-    setSearchText(text);
-    if (text.trim() === '') {
-      setFilteredBooks(books);
-    } else {
-      const filtered = books.filter(book => 
-        book.name.toLowerCase().includes(text.toLowerCase())
-      );
-      setFilteredBooks(filtered);
-    }
-  };
+  useEffect(() => {
+    let filtered = books;
+    if (search) filtered = filtered.filter(b => b.title.toLowerCase().includes(search.toLowerCase()));
+    if (categoryFilter !== 'All') filtered = filtered.filter(b => b.category === categoryFilter);
+    setFilteredBooks(filtered);
+  }, [search, categoryFilter, books]);
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    setSearchText(''); // Clear search on refresh
-    fetchBooks();
-  };
-
-  const handleOpenPdf = async (fileId) => {
-    try {
-      const manualUrl = `${ENDPOINT}/storage/buckets/${BUCKET_ID}/files/${fileId}/view?project=${PROJECT_ID}`;
-      await Linking.openURL(encodeURI(manualUrl));
-    } catch (e) {
-      Alert.alert("Error", "Could not open the book.");
-    }
-  };
+  const renderItem = ({ item }) => (
+    <TouchableOpacity 
+      style={[styles.bookCard, { backgroundColor: isDark ? '#1A1A1A' : '#FFF' }]} 
+      onPress={() => router.push({ pathname: '/book-detail', params: item })}
+    >
+      {item.thumbnail ? (
+        <Image source={{ uri: item.thumbnail }} style={styles.bookImage} />
+      ) : (
+        <View style={[styles.bookImage, { backgroundColor: '#ccc', justifyContent: 'center', alignItems: 'center' }]}>
+            <Icon name="book" size={24} color="#666" />
+        </View>
+      )}
+      <View style={styles.infoContainer}>
+        <ThemedText style={styles.bookTitle} numberOfLines={2}>{item.title}</ThemedText>
+        <ThemedText style={styles.bookAuthor} numberOfLines={1}>By {item.author}</ThemedText>
+        <ThemedText style={styles.categoryTag}>{item.category}</ThemedText>
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
-    <ThemedView style={styles.root}>
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
-          <ThemedText style={styles.heading}>Library</ThemedText>
-          <View style={styles.goldUnderline} />
-        </View>
+    <ThemedView style={[styles.root, { paddingTop: insets.top }]}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Icon name="arrow-back" size={24} color="gold" />
+        </TouchableOpacity>
+        <ThemedText style={styles.heading}>Library</ThemedText>
+      </View>
 
-        {/* ✅ SEARCH BAR UI */}
-        <View style={styles.searchContainer}>
-          <Icon name="search-outline" size={20} color="#888" style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search books..."
-            placeholderTextColor="#888"
-            value={searchText}
-            onChangeText={handleSearch}
-          />
-          {searchText.length > 0 && (
-            <TouchableOpacity onPress={() => handleSearch('')}>
-              <Icon name="close-circle" size={18} color="#888" />
-            </TouchableOpacity>
-          )}
-        </View>
+      <View style={styles.content}>
+        <TextInput 
+          style={[styles.searchBar, { color: isDark ? '#FFF' : '#000', backgroundColor: isDark ? '#333' : '#F0F0F0' }]}
+          placeholder="Search books..."
+          placeholderTextColor="#888"
+          value={search}
+          onChangeText={setSearch}
+        />
 
-        {loading && !refreshing ? (
-          <View style={styles.center}>
-            <ActivityIndicator size="large" color="#ffd700" />
-          </View>
+        <Menu 
+          visible={menuVisible} 
+          onDismiss={() => setMenuVisible(false)} 
+          anchor={
+            <Button mode="outlined" onPress={() => setMenuVisible(true)} style={styles.filterBtn} textColor="gold">
+              {categoryFilter}
+            </Button>
+          }
+        >
+          <Menu.Item title="All" onPress={() => {setCategoryFilter('All'); setMenuVisible(false)}} />
+          {['Devotional', 'Leadership', 'Discipleship', 'Evangelism'].map(cat => (
+            <Menu.Item key={cat} title={cat} onPress={() => {setCategoryFilter(cat); setMenuVisible(false)}} />
+          ))}
+        </Menu>
+
+        {loading ? (
+          <ActivityIndicator size="large" color="gold" style={styles.loader} />
         ) : (
           <FlatList
-            data={filteredBooks} // ✅ Use filtered list here
-            keyExtractor={(item) => item.$id}
-            contentContainerStyle={styles.listContent}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#ffd700" />
-            }
-            ListEmptyComponent={
-              <View style={styles.center}>
-                <ThemedText style={{ opacity: 0.5 }}>No books found</ThemedText>
-              </View>
-            }
-            renderItem={({ item }) => (
-              <TouchableOpacity 
-                style={styles.bookCard} 
-                onPress={() => handleOpenPdf(item.$id)}
-              >
-                <View style={styles.bookInfo}>
-                  <ThemedText style={styles.bookTitle}>
-                    {item.name.replace('.pdf', '')}
-                  </ThemedText>
-                  <ThemedText style={styles.bookAuthor}>Tap to read online</ThemedText>
-                </View>
-                <Icon name="open-outline" size={22} color="#ffd700" />
-              </TouchableOpacity>
-            )}
+            data={filteredBooks}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={renderItem}
+            contentContainerStyle={styles.list}
           />
         )}
-      </SafeAreaView>
+      </View>
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  safeArea: { flex: 1 },
-  header: { paddingHorizontal: 25, marginTop: 15 },
-  heading: { fontSize: 34, fontWeight: '900' },
-  goldUnderline: { height: 4, width: 45, backgroundColor: '#ffd700', marginTop: 5, marginBottom: 15, borderRadius: 2 },
-  
-  // ✅ SEARCH STYLES
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    marginHorizontal: 25,
-    paddingHorizontal: 15,
-    borderRadius: 12,
-    height: 45,
-    marginBottom: 10,
-  },
-  searchIcon: { marginRight: 10 },
-  searchInput: { flex: 1, color: '#fff', fontSize: 16 },
-
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 50 },
-  listContent: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 50 },
+  header: { flexDirection: 'row', alignItems: 'center', padding: 20 },
+  backButton: { marginRight: 15 },
+  heading: { fontSize: 28, fontWeight: '900', color: 'gold' },
+  content: { paddingHorizontal: 20, flex: 1 },
+  searchBar: { padding: 12, borderRadius: 8, marginBottom: 15 },
+  filterBtn: { marginBottom: 15, alignSelf: 'flex-start', borderColor: 'gold' },
+  loader: { marginTop: 50 },
+  list: { paddingBottom: 50 },
   bookCard: { 
     flexDirection: 'row', 
-    backgroundColor: 'rgba(255, 255, 255, 0.05)', 
-    borderRadius: 16, 
-    padding: 20, 
+    padding: 10, 
+    borderRadius: 12, 
     marginBottom: 15, 
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,215,0,0.1)'
+    elevation: 3, 
+    height: 120,
+    alignItems: 'center' 
   },
-  bookInfo: { flex: 1 },
-  bookTitle: { fontSize: 17, fontWeight: 'bold' },
-  bookAuthor: { fontSize: 13, color: '#ffd700', marginTop: 4, opacity: 0.8 },
+  bookImage: { width: 80, height: '100%', borderRadius: 8 },
+  infoContainer: { paddingLeft: 15, flex: 1, justifyContent: 'center' },
+  bookTitle: { fontSize: 16, fontWeight: 'bold' },
+  bookAuthor: { fontSize: 13, opacity: 0.7, marginTop: 4 },
+  categoryTag: { fontSize: 11, color: 'gold', fontWeight: '800', marginTop: 4 }
 });

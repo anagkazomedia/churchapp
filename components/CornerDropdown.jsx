@@ -54,11 +54,18 @@ const CornerDropdown = () => {
         <Divider />
 
         {/* INTERNAL LINKS */}
+
         <Menu.Item 
-          leadingIcon="book-open-variant" 
-          title="Daily Devotions" 
+          leadingIcon="calendar-clock" 
+          title="Updates" 
           titleStyle={{ color: theme.text }}
-          onPress={() => handleNavigation('/devotions')}
+          onPress={() => handleNavigation('/events')}
+        />
+        <Menu.Item 
+          leadingIcon="file-document-outline" 
+          title="Resources" 
+          titleStyle={{ color: theme.text }}
+          onPress={() => handleNavigation('/resources')}
         />
 
         <Menu.Item 
@@ -71,15 +78,6 @@ const CornerDropdown = () => {
         <Divider />
 
         {/* EXTERNAL / APP ACTIONS */}
-        <Menu.Item 
-          leadingIcon="share-variant" 
-          title="Share App" 
-          titleStyle={{ color: theme.text }}
-          onPress={() => {
-            Share.share({ message: 'Download our Church App!' });
-            setVisible(false);
-          }} 
-        />
         
         <Divider />
         

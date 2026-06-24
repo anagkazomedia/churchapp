@@ -1,202 +1,136 @@
-import React, { useState, useEffect, useCallback, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { 
-  StyleSheet, View, Animated, Dimensions, 
-  TouchableOpacity, Share, Text, ActivityIndicator 
+  StyleSheet, View, FlatList, ActivityIndicator, 
+  TouchableOpacity, TextInput, Platform, StatusBar
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import Icon from 'react-native-vector-icons/Ionicons';
-import YoutubePlayer from "react-native-youtube-iframe";
-import { SafeAreaView } from 'react-native-safe-area-context';
 import NetInfo from "@react-native-community/netinfo";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import api from '../../src/services/api';
 import ThemedView from '../../components/ThemedView'; 
 import ThemedText from '../../components/ThemedText'; 
-import CornerDropdown from '../../components/CornerDropdown'; 
 import { ThemeContext } from '../../components/ThemedContext';
-
-const { width } = Dimensions.get('window');
-const VIDEO_WIDTH = width - 40;
-
-// This must be exact: Video(210) + Content(~175) + MarginBottom(25)
-const ITEM_SIZE = 410; 
-
-const API_KEY = 'AIzaSyBaf4btLUotVuyjk90t0Mdhj8CYWq6zjf4'; 
-const CHANNEL_ID = 'UCH9G4vzflQn7Ty4K12tR8WQ'; 
-
-const HEADER_MAX_HEIGHT = 140;
-const HEADER_MIN_HEIGHT = 70;
-const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
+import CornerDropdown from '../../components/CornerDropdown';
+import CachedImage from '../../components/CachedImage';
 
 export default function SermonsPage() {
   const { isDark } = useContext(ThemeContext);
+  const router = useRouter();
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isOffline, setIsOffline] = useState(false);
-
-  const scrollY = useRef(new Animated.Value(0)).current;
-
-  const headerBg = isDark ? '#121212' : '#F0F0F3'; 
-  const cardBg = isDark ? '#1A1A1A' : '#FFFFFF';
-  const dynamicBorder = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
-
-  // Header animations
-  const headerHeight = scrollY.interpolate({
-    inputRange: [0, HEADER_SCROLL_DISTANCE],
-    outputRange: [HEADER_MAX_HEIGHT, HEADER_MIN_HEIGHT],
-    extrapolate: 'clamp',
-  });
-
-  const textOpacity = scrollY.interpolate({
-    inputRange: [0, HEADER_SCROLL_DISTANCE / 2, HEADER_SCROLL_DISTANCE],
-    outputRange: [1, 0.5, 0],
-    extrapolate: 'clamp',
-  });
-
-  useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener(state => {
-      setIsOffline(state.isConnected === false);
-    });
-    return () => unsubscribe();
-  }, []);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     const fetchVideos = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(
-          `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${CHANNEL_ID}&part=snippet,id&order=date&maxResults=50`
-        );
-        const data = await response.json();
-        if (data.items) {
-          const formattedVideos = data.items
-            .filter(item => item.id.videoId)
-            .map((item) => ({
-              id: item.id.videoId,
-              videoId: item.id.videoId,
-              title: item.snippet.title,
-              description: item.snippet.description,
-            }));
-          setVideos(formattedVideos);
+      setLoading(true);
+      const net = await NetInfo.fetch();
+      
+      if (!net.isConnected) {
+        const cached = await AsyncStorage.getItem('cache_videos');
+        if (cached) setVideos(JSON.parse(cached));
+      } else {
+        try {
+          const response = await api.get('api/videos/');
+          // DIAGNOSTIC: Log the first item to confirm if get_video_url is present
+          console.log("--- API DEBUG: First Video Item ---");
+          console.log(response.data[0]); 
+          
+          const data = response.data.reverse();
+          setVideos(data);
+          await AsyncStorage.setItem('cache_videos', JSON.stringify(data));
+        } catch (error) {
+          console.error("Error fetching videos:", error);
         }
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
       }
+      setLoading(false);
     };
     fetchVideos();
   }, []);
 
-  const onShare = async (title, videoId) => {
-    try {
-      const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
-      await Share.share({ message: `Watch this: "${title}"\n${videoUrl}` });
-    } catch (error) { console.log(error.message); }
+  // DEFENSIVE FIX: Logic to reconstruct the URL if the API field is missing
+// UPDATED: Added encodeURI to handle special characters in B2 filenames
+  const getVideoSource = (item) => {
+    const rawUrl = item.get_video_url || item.video_file || item.video_file_key || "";
+    if (!rawUrl) return "";
+
+    const trimmed = rawUrl.trim();
+    if (/^https?:\/\//i.test(trimmed)) {
+      return trimmed;
+    }
+
+    const cleanKey = trimmed.replace(/^\/+/, '');
+    return `https://f005.backblazeb2.com/file/anagkazo-storage/${cleanKey}`;
   };
 
-  const renderSermon = useCallback(({ item, index }) => {
-    /** * THE PHANEROO FIX: 
-     * We create a window around the item. 
-     * As the scrollY passes this item's position, it scales up to 1.
-     * When it's far above or far below, it scales down.
-     */
-    const inputRange = [
-      (index - 1) * ITEM_SIZE,
-      index * ITEM_SIZE,
-      (index + 1) * ITEM_SIZE,
-    ];
+  const filteredVideos = videos.filter((video) =>
+    video?.title?.toLowerCase().includes(search.toLowerCase())
+  );
 
-    const scale = scrollY.interpolate({
-      inputRange,
-      outputRange: [0.9, 1, 0.9],
-      extrapolate: 'clamp',
-    });
-
-    const opacity = scrollY.interpolate({
-      inputRange,
-      outputRange: [0.6, 1, 0.6],
-      extrapolate: 'clamp',
-    });
-
-    return (
-      <Animated.View style={[
-        styles.sermonCard, 
-        { 
-          backgroundColor: cardBg, 
-          borderColor: dynamicBorder,
-          opacity,
-          transform: [{ scale }] 
+  const renderSermon = ({ item }) => (
+    <TouchableOpacity 
+      style={styles.videoItem}
+      onPress={() => router.push({
+        pathname: '../video-detail',
+        params: { 
+            title: item.title, 
+            video_url: getVideoSource(item),
+            get_video_url: item.get_video_url,
+            video_file: item.video_file,
+            video_file_key: item.video_file_key,
+            description: item.description, 
+            thumbnail: item.thumbnail,
+            date: item.created_at
         }
-      ]}>
-        <View style={styles.videoWrapper}>
-          {isOffline ? (
-            <View style={styles.offlineVideoPlaceholder}>
-               <Icon name="cloud-offline-outline" size={48} color="gold" />
-               <ThemedText style={styles.offlinePlaceholderText}>Connect to watch</ThemedText>
-            </View>
-          ) : (
-            <YoutubePlayer height={210} width={VIDEO_WIDTH} videoId={item.videoId} play={false} />
-          )}
+      })}
+    >
+      <View style={styles.thumbnailWrapper}>
+        <CachedImage uri={item.thumbnail} style={styles.thumbnail} type="video" />
+        <View style={styles.playOverlay}>
+            <Icon name="play" size={40} color="white" />
         </View>
-        
-        <View style={styles.contentPadding}>
-          <ThemedText style={styles.titleText} numberOfLines={2}>{item.title}</ThemedText>
-          <ThemedText style={styles.descriptionText} numberOfLines={2}>{item.description}</ThemedText>
-          <TouchableOpacity style={styles.shareAction} onPress={() => onShare(item.title, item.videoId)}>
-            <Icon name="share-social" size={16} color="gold" />
-            <Text style={styles.shareText}>SHARE VIDEO</Text>
-          </TouchableOpacity>
-        </View>
-      </Animated.View>
-    );
-  }, [isDark, isOffline]);
+      </View>
+
+      <View style={styles.infoContainer}>
+        <ThemedText style={styles.titleText} numberOfLines={2}>{item.title}</ThemedText>
+        <ThemedText style={styles.dateText}>
+            {new Date(item.created_at).toLocaleDateString()}
+        </ThemedText>
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
     <ThemedView style={styles.root}>
-      <Animated.View style={[
-        styles.headerSurface, 
-        { 
-          height: headerHeight,
-          backgroundColor: headerBg, 
-          borderBottomColor: dynamicBorder,
-          zIndex: 100
-        }
-      ]}>
-        <SafeAreaView edges={['top']} style={{ flex: 1 }}>
-          <View style={styles.headerArea}>
-            <View style={styles.headerTopRow}>
-              <Animated.View style={{ opacity: textOpacity }}>
-                <ThemedText style={styles.mainTitle}>Videos</ThemedText>
-                <ThemedText style={styles.dateSubText}>Watch our latest videos</ThemedText>
-              </Animated.View>
-              <CornerDropdown />
-            </View>
-            <Animated.View style={[styles.goldUnderline, { opacity: textOpacity }]} />
-          </View>
-        </SafeAreaView>
-      </Animated.View>
+      <View style={[styles.header, { backgroundColor: isDark ? '#121212' : '#F0F0F3' }]}>
+        <View style={styles.headerTop}>
+            <ThemedText style={styles.headerTitle}>Videos</ThemedText>
+            <CornerDropdown />
+        </View>
+        
+        <View style={styles.searchContainer}>
+            <Icon name="search" size={20} color="gold" style={styles.searchIcon} />
+            <TextInput
+            style={styles.searchInput}
+            placeholder="Search videos..."
+            placeholderTextColor="#888"
+            value={search}
+            onChangeText={setSearch}
+            />
+        </View>
+      </View>
 
       {loading ? (
         <View style={styles.loaderContainer}>
           <ActivityIndicator size="large" color="gold" />
         </View>
       ) : (
-        <Animated.FlatList
-          data={videos}
-          keyExtractor={(item) => item.id}
+        <FlatList
+          data={filteredVideos}
+          keyExtractor={(item) => item.id.toString()}
           renderItem={renderSermon}
-          contentContainerStyle={[styles.listPadding, { paddingTop: HEADER_MAX_HEIGHT + 20 }]}
-          showsVerticalScrollIndicator={false}
-          
-          // PHYSICS FIX:
-          snapToAlignment="start"
-          decelerationRate="normal" // Changed from 'fast' to allow continuous scrolling
-          snapToInterval={ITEM_SIZE}
-          
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-            { useNativeDriver: false }
-          )}
-          scrollEventThrottle={16}
+          contentContainerStyle={styles.listPadding}
         />
       )}
     </ThemedView>
@@ -205,30 +139,39 @@ export default function SermonsPage() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  headerSurface: { position: 'absolute', top: 0, left: 0, right: 0, borderBottomWidth: 1, elevation: 4, zIndex: 100 },
-  headerArea: { paddingHorizontal: 20, flex: 1, justifyContent: 'center' },
-  headerTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  mainTitle: { fontSize: 32, fontWeight: '900', letterSpacing: -1, textTransform: 'uppercase' },
-  dateSubText: { fontSize: 13, opacity: 0.6, fontWeight: '600', marginTop: 2 },
-  goldUnderline: { height: 4, width: 40, backgroundColor: 'gold', marginTop: 8, borderRadius: 2 },
-  loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  listPadding: { paddingBottom: 120 },
-  sermonCard: { 
-    marginHorizontal: 20, 
-    marginBottom: 25, 
-    borderRadius: 12, 
-    borderWidth: 1, 
-    overflow: 'hidden', 
-    elevation: 3,
-    // Ensure height is stable for animation
-    height: ITEM_SIZE - 25 
+  header: { 
+    paddingHorizontal: 20, 
+    paddingTop: Platform.OS === 'ios' ? 50 : StatusBar.currentHeight + 20, 
+    paddingBottom: 20 
   },
-  videoWrapper: { backgroundColor: '#000', height: 210 },
-  offlineVideoPlaceholder: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },
-  offlinePlaceholderText: { color: 'gold', fontSize: 11, fontWeight: '900', textTransform: 'uppercase', marginTop: 10, opacity: 0.8 },
-  contentPadding: { padding: 18 },
-  titleText: { fontSize: 18, fontWeight: '800', marginBottom: 8, lineHeight: 24 },
-  descriptionText: { fontSize: 13, opacity: 0.6, lineHeight: 18, marginBottom: 18 },
-  shareAction: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: 'gold', alignSelf: 'flex-start', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 12 },
-  shareText: { color: 'gold', fontWeight: '900', fontSize: 11, marginLeft: 8, letterSpacing: 1 },
+  headerTop: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 15 
+  },
+  headerTitle: { fontSize: 24, fontWeight: '900', textTransform: 'uppercase' },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(128,128,128,0.1)',
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    height: 45,
+  },
+  searchIcon: { marginRight: 10 },
+  searchInput: { flex: 1, color: 'gold', fontSize: 16 },
+  loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  listPadding: { paddingBottom: 50 },
+  videoItem: { marginBottom: 25, paddingHorizontal: 15 },
+  thumbnailWrapper: { width: '100%', height: 220, backgroundColor: '#333', borderRadius: 8, overflow: 'hidden' },
+  thumbnail: { width: '100%', height: '100%' },
+  playOverlay: { 
+    ...StyleSheet.absoluteFillObject, 
+    justifyContent: 'center', alignItems: 'center', 
+    backgroundColor: 'rgba(0,0,0,0.2)' 
+  },
+  infoContainer: { padding: 12 },
+  titleText: { fontSize: 16, fontWeight: '800', marginBottom: 4 },
+  dateText: { fontSize: 13, opacity: 0.6, fontWeight: '600' }
 });

@@ -1,20 +1,18 @@
-import React, { useState, useEffect, useMemo, useRef, useContext } from 'react';
+import React, { useState, useMemo, useRef, useContext } from 'react';
 import { 
   StyleSheet, View, TextInput, TouchableOpacity, 
-  FlatList, ActivityIndicator, Alert, ScrollView, 
-  Text, Modal, Platform
+  FlatList, ScrollView, Text, Modal 
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import NetInfo from "@react-native-community/netinfo";
 
-import { account, databases, DATABASE_ID, COLLECTION_ID } from '../../lib/appwrite'; 
 import bibleData from '../../assets/kjv.json';
 import CornerDropdown from '../../components/CornerDropdown'; 
 import { ThemeContext } from '../../components/ThemedContext';
+import ThemedText from '../../components/ThemedText';
+import ThemedView from '../../components/ThemedView';
 
-// Safe check for bible data
 const ALL_BOOKS = bibleData?.verses ? [...new Set(bibleData.verses.map(v => v.book_name))] : [];
 
 export default function BibleApp() {
@@ -22,71 +20,15 @@ export default function BibleApp() {
   const flatListRef = useRef(null);
   const { isDark } = useContext(ThemeContext);
   
-  // States
   const [book, setBook] = useState('Genesis');
   const [currentChapter, setCurrentChapter] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState(''); 
-  const [currentUser, setCurrentUser] = useState(null);
-  const [savingId, setSavingId] = useState(null);
-  const [showPicker, setShowPicker] = useState(false); // For the new selector
+  const [showPicker, setShowPicker] = useState(false);
 
-  // Dynamic UI colors
   const headerBg = isDark ? '#121212' : '#F0F0F3'; 
   const inputBg = isDark ? '#1E1E1E' : '#FFFFFF';
   const dynamicBorder = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
   const textColor = isDark ? '#FFFFFF' : '#000000';
-
-  // 1. SCRIPTURE JUMP LOGIC (BibleShow Style)
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      const query = searchQuery.trim();
-      
-      // Regex to detect "John 3:16" or "1 John 2"
-      const scriptureRegex = /^(\d?\s?[a-zA-Z]+)\s*(\d+)?[:\s-]*(\d+)?/;
-      const match = query.match(scriptureRegex);
-
-      if (match && query.length > 2) {
-        const parsedBook = match[1].trim();
-        const parsedChapter = match[2];
-        const parsedVerse = match[3];
-
-        // Find exact book match
-        const foundBook = ALL_BOOKS.find(b => b.toLowerCase() === parsedBook.toLowerCase());
-        
-        if (foundBook) {
-          setBook(foundBook);
-          if (parsedChapter) setCurrentChapter(parseInt(parsedChapter));
-          
-          // If a verse is specified, scroll to it
-          if (parsedVerse) {
-            setTimeout(() => {
-              flatListRef.current?.scrollToIndex({ 
-                index: Math.max(0, parseInt(parsedVerse) - 1), 
-                animated: true 
-              });
-            }, 600);
-          }
-          setDebouncedSearch(''); // Clear search mode to show the chapter
-          return;
-        }
-      }
-      setDebouncedSearch(query);
-    }, 400);
-
-    return () => clearTimeout(handler);
-  }, [searchQuery]);
-
-  // Rest of your existing Effects (User check, etc.)
-  useEffect(() => {
-    const checkUser = async () => {
-      try {
-        const user = await account.get();
-        setCurrentUser(user);
-      } catch (e) { setCurrentUser(null); }
-    };
-    checkUser();
-  }, []);
 
   const chapterList = useMemo(() => {
     const bookVerses = bibleData.verses.filter(v => v.book_name === book);
@@ -95,7 +37,7 @@ export default function BibleApp() {
   }, [book]);
 
   const versesToDisplay = useMemo(() => {
-    const query = debouncedSearch.trim().toLowerCase();
+    const query = searchQuery.trim().toLowerCase();
     if (query) {
       return bibleData.verses.filter(v => 
         v.text.toLowerCase().includes(query) || 
@@ -103,47 +45,10 @@ export default function BibleApp() {
       ).slice(0, 50);
     }
     return bibleData.verses.filter(v => v.book_name === book && v.chapter === currentChapter);
-  }, [book, currentChapter, debouncedSearch]);
-
-  const selectBook = (selectedBook) => {
-    setBook(selectedBook);
-    setCurrentChapter(1);
-    setSearchQuery('');
-    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-  };
-
-  const selectChapter = (chap) => {
-    setCurrentChapter(chap);
-    setSearchQuery('');
-    setShowPicker(false); // Close picker if it was open
-    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-  };
-
-  const saveToFavorites = async (verseObj) => {
-    if (!currentUser) {
-      Alert.alert("Login Required", "Log in to save favorites.");
-      return;
-    }
-    const state = await NetInfo.fetch();
-    if (!state.isConnected) {
-      Alert.alert("Offline", "Connection required to save favorites.");
-      return;
-    }
-    const verseId = `${verseObj.book_name}-${verseObj.chapter}-${verseObj.verse}`;
-    setSavingId(verseId);
-    try {
-      await databases.createDocument(DATABASE_ID, COLLECTION_ID, 'unique()', {
-        scripture: `${verseObj.book_name} ${verseObj.chapter}:${verseObj.verse}: ${verseObj.text}`,
-        userid: currentUser.$id 
-      });
-      Alert.alert("Success", "Saved to favorites!");
-    } catch (error) {
-      Alert.alert("Error", "Save failed.");
-    } finally { setSavingId(null); }
-  };
+  }, [book, currentChapter, searchQuery]);
 
   return (
-    <View style={[styles.root, { backgroundColor: isDark ? '#000' : '#FFF' }]}>
+    <ThemedView style={styles.root}>
       <View style={[styles.headerSurface, { backgroundColor: headerBg, borderBottomColor: dynamicBorder }]}>
         <SafeAreaView edges={['top']}>
           <View style={styles.topNavigation}>
@@ -157,22 +62,11 @@ export default function BibleApp() {
                     onChangeText={setSearchQuery}
                   />
               </View>
-              <View style={styles.headerActions}>
-                  <TouchableOpacity onPress={() => router.push('../favourites')} style={styles.navFavBtn}>
-                      <Icon name="heart-outline" size={24} color="gold" />
-                  </TouchableOpacity>
-                  <CornerDropdown />
-              </View>
+              <CornerDropdown />
           </View>
 
-          {/* 2. THE PICKER BUTTON */}
-          <TouchableOpacity 
-            style={styles.pickerTrigger} 
-            onPress={() => setShowPicker(true)}
-          >
-            <Text style={[styles.pickerText, { color: textColor }]}>
-              {book} {currentChapter}
-            </Text>
+          <TouchableOpacity style={styles.pickerTrigger} onPress={() => setShowPicker(true)}>
+            <Text style={[styles.pickerText, { color: textColor }]}>{book} {currentChapter}</Text>
             <Icon name="chevron-down" size={16} color="gold" />
           </TouchableOpacity>
         </SafeAreaView>
@@ -181,12 +75,11 @@ export default function BibleApp() {
       <FlatList
         ref={flatListRef}
         data={versesToDisplay}
-        onScrollToIndexFailed={() => {}} // Prevents crash if scroll fails
-        keyExtractor={(item) => `${item.book_name}-${item.chapter}-${item.verse}`}
+        keyExtractor={(item, index) => index.toString()}
         ListHeaderComponent={
           <View style={styles.header}>
              <Text style={[styles.bibleHeading, { color: textColor }]}>
-               {debouncedSearch ? "SEARCH RESULTS" : `${book.toUpperCase()} ${currentChapter}`}
+               {searchQuery ? "SEARCH RESULTS" : `${book.toUpperCase()} ${currentChapter}`}
              </Text>
              <View style={styles.goldUnderline} />
           </View>
@@ -198,18 +91,11 @@ export default function BibleApp() {
             <View style={{ flex: 1 }}>
               <Text style={[styles.verseContent, { color: isDark ? '#CCC' : '#333' }]}>{item.text}</Text>
             </View>
-            <TouchableOpacity onPress={() => saveToFavorites(item)} style={styles.favBtn}>
-              {savingId === `${item.book_name}-${item.chapter}-${item.verse}` ? (
-                <ActivityIndicator size="small" color="gold" />
-              ) : (
-                <Icon name="bookmark-outline" size={20} color={isDark ? "#888" : "#999"} />
-              )}
-            </TouchableOpacity>
           </View>
         )}
       />
 
-      {/* 3. THE BOOK/CHAPTER SELECTOR MODAL */}
+      {/* Selector Modal */}
       <Modal visible={showPicker} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: headerBg }]}>
@@ -219,34 +105,18 @@ export default function BibleApp() {
                 <Icon name="close-circle" size={28} color="gold" />
               </TouchableOpacity>
             </View>
-
             <View style={styles.pickerColumns}>
-              {/* Books Column */}
               <ScrollView style={styles.column}>
                 {ALL_BOOKS.map((bName) => (
-                  <TouchableOpacity 
-                    key={bName} 
-                    onPress={() => setBook(bName)}
-                    style={[styles.pickerItem, book === bName && styles.activeItem]}
-                  >
-                    <Text style={[styles.pickerItemText, { color: textColor }, book === bName && { color: 'gold' }]}>
-                      {bName}
-                    </Text>
+                  <TouchableOpacity key={bName} onPress={() => { setBook(bName); setCurrentChapter(1); }} style={styles.pickerItem}>
+                    <Text style={[styles.pickerItemText, { color: textColor }]}>{bName}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
-
-              {/* Chapters Column */}
               <ScrollView style={styles.column}>
                 {chapterList.map((chap) => (
-                  <TouchableOpacity 
-                    key={chap} 
-                    onPress={() => selectChapter(chap)}
-                    style={[styles.pickerItem, currentChapter === chap && styles.activeItem]}
-                  >
-                    <Text style={[styles.pickerItemText, { color: textColor }, currentChapter === chap && { color: 'gold' }]}>
-                      Chapter {chap}
-                    </Text>
+                  <TouchableOpacity key={chap} onPress={() => { setCurrentChapter(chap); setShowPicker(false); }} style={styles.pickerItem}>
+                    <Text style={[styles.pickerItemText, { color: textColor }]}>Chapter {chap}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -254,9 +124,10 @@ export default function BibleApp() {
           </View>
         </View>
       </Modal>
-    </View>
+    </ThemedView>
   );
 }
+// ... keep your styles object from the previous file
 
 const styles = StyleSheet.create({
   root: { flex: 1 },

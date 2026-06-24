@@ -1,127 +1,94 @@
-import { StyleSheet, Text, TouchableWithoutFeedback, Keyboard, View, TouchableOpacity } from 'react-native' 
-import { Link, useRouter } from 'expo-router' // Added useRouter
-import { useState } from 'react'
-import { Colors }  from '../../constants/Colors'
-import { Ionicons } from '@expo/vector-icons'
-
-//themed components
-import ThemedView from '../../components/ThemedView'
-import Spacer from '../../components/Spacer'
-import ThemedText from '../../components/ThemedText'
-import ThemedButton from '../../components/ThemedButton'
-import ThemedTextInput from '../../components/ThemedTextInput'
-import { useUser } from '../../hooks/useUser'
+import React, { useState } from 'react';
+import { StyleSheet, Text, TouchableWithoutFeedback, Keyboard, View, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Link, useRouter } from 'expo-router';
+import { Colors } from '../../constants/Colors';
+import { Ionicons } from '@expo/vector-icons';
+import { useUser } from '../../hooks/useUser';
+import ThemedView from '../../components/ThemedView';
+import Spacer from '../../components/Spacer';
+import ThemedText from '../../components/ThemedText';
+import ThemedButton from '../../components/ThemedButton';
+import ThemedTextInput from '../../components/ThemedTextInput';
 
 const Register = () => {
-    const router = useRouter(); // Initialize router for the back button
+    const router = useRouter();
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+    const [username, setUsername] = useState(''); // Added username
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(false);
 
-    const togglePasswordVisibility = () => {
-        setIsPasswordVisible(!isPasswordVisible);
+    const { register } = useUser();
+
+    const handleSubmit = async () => {
+        setError(null);
+        setLoading(true);
+        try {
+            await register(username.trim(), email.trim(), password);
+            router.replace('/dashboard/Home');
+        } catch (error) {
+            // Logs exact server error for easier debugging
+            console.log("Registration Error:", error.response?.data);
+            setError("Registration failed. Please check your username and email.");
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
-    const [error, setError] = useState(null)
+    return (
+        <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+            <ThemedView style={styles.container}>
+                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                    <Ionicons name="arrow-back" size={28} color="gold" />
+                </TouchableOpacity>
 
-    const { register } = useUser()
+                <ThemedText title={true} style={styles.title}>Register Account</ThemedText>
 
-    const handleSubmit = async() => {
-        setError(null)
-        try {
-            await register(email.trim(), password)
-        } catch (error) {
-            const rawMessage = error.message.toLowerCase();
-            let friendlyMessage = "Check email or password or email is already in use.";
-
-            if (rawMessage.includes('email-already-in-use')) {
-                friendlyMessage = "An account with this email already exists.";
-            } else if (rawMessage.includes('invalid-email')) {
-                friendlyMessage = "Please enter a valid email address.";
-            } else if (rawMessage.includes('weak-password')) {
-                friendlyMessage = "Password must be at least 6 characters.";
-            } else if (rawMessage.includes('network')) {
-                friendlyMessage = "Check your internet connection.";
-            }
-
-            setError(friendlyMessage)
-        }
-    }
-
-  return (
-    <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-      <ThemedView style={styles.container}>
-        
-        {/* BACK BUTTON */}
-        <TouchableOpacity 
-            onPress={() => router.back()} 
-            style={styles.backButton}
-        >
-            <Ionicons name="arrow-back" size={28} color="gold" />
-        </TouchableOpacity>
-
-        <Spacer />
-        <ThemedText title={true} style={styles.title}>
-            Register for an account
-        </ThemedText>
-
-        <ThemedTextInput 
-            style={{ width: '80%', marginBottom: 20}}
-            placeholder="email" 
-            keyboardType="email-address"
-            autoCapitalize="none" 
-            onChangeText={setEmail}
-            value={email}
-        />
-
-        <View style={{ width: '80%', justifyContent: 'center' }}>
-            <ThemedTextInput 
-                style={{ width: '100%', marginBottom: 20}}
-                placeholder="password" 
-                onChangeText={setPassword}
-                value={password}
-                secureTextEntry={!isPasswordVisible}
-            />
-            <TouchableOpacity 
-                onPress={togglePasswordVisibility}
-                style={{ position: 'absolute', right: 15, top: 15 }}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-                <Ionicons 
-                    name={isPasswordVisible ? 'eye-outline' : 'eye-off-outline'} 
-                    size={22} 
-                    color={Colors.gray || '#888'} 
+                <ThemedTextInput 
+                    style={styles.input}
+                    placeholder="username" 
+                    autoCapitalize="none" 
+                    onChangeText={setUsername}
+                    value={username}
                 />
-            </TouchableOpacity>
-        </View>
 
-        <ThemedButton onPress={handleSubmit}>
-            <Text style={{ color: '#f2f2f2' }}> Register </Text>
-        </ThemedButton>
+                <ThemedTextInput 
+                    style={styles.input}
+                    placeholder="email" 
+                    keyboardType="email-address"
+                    autoCapitalize="none" 
+                    onChangeText={setEmail}
+                    value={email}
+                />
 
-        <Spacer />
-        {error && <Text style={styles.error}>{error}</Text>}
+                <ThemedTextInput 
+                    style={styles.input}
+                    placeholder="password" 
+                    onChangeText={setPassword}
+                    value={password}
+                    secureTextEntry={!isPasswordVisible}
+                />
 
-        <Spacer height={100} />
-        <Link href='./login'>
-            <ThemedText style={{ textAlign: 'center' }}>
-                login instead
-            </ThemedText>
-        </Link>
-      </ThemedView>
-    </TouchableWithoutFeedback>
-  )
-}
+                <ThemedButton onPress={handleSubmit} disabled={loading}>
+                    {loading ? <ActivityIndicator color="#f2f2f2" /> : <Text style={{ color: '#f2f2f2' }}> Register </Text>}
+                </ThemedButton>
 
-export default Register
+                {error && <Text style={styles.error}>{error}</Text>}
+            </ThemedView>
+        </TouchableWithoutFeedback>
+    );
+};
 
+export default Register;
+// Keep your existing styles constant...
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: "center",
-        alignItems: 'center'
+        alignItems: 'center',
+        paddingHorizontal: 20 // Added for better mobile responsiveness
     },
-    // Same Back Button style as Login page
     backButton: {
         position: 'absolute',
         top: 60, 
@@ -131,16 +98,23 @@ const styles = StyleSheet.create({
     },
     title: {
         textAlign: "center",
-        fontSize: 18,
+        fontSize: 22, // Slightly larger for better hierarchy
+        fontWeight: 'bold',
         marginBottom: 30
     },
+    input: {
+        width: '80%', 
+        marginBottom: 20
+    },
     error: {
-        color: Colors.warning,
-        padding: 10,
-        backgroundColor: '#f5c1c8',
-        borderColor: Colors.warning,
+        color: '#721c24', // Standard warning red
+        padding: 12,
+        backgroundColor: '#f8d7da',
+        borderColor: '#f5c6cb',
         borderWidth: 1,
-        borderRadius: 6,
-        marginHorizontal: 10,
+        borderRadius: 8,
+        marginHorizontal: 20,
+        textAlign: 'center',
+        marginTop: 10
     }
-})
+});

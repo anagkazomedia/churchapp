@@ -1,73 +1,112 @@
+
 Privacy Policy
-This privacy policy applies to the Anagkazo app (hereby referred to as "Application") for mobile devices that was created by anagkazomedia (hereby referred to as "Service Provider") as a Free service. This service is intended for use "AS IS".
+This privacy policy is applicable to the Anagkazo app for mobile devices, together with any related services operated by Anagkazo Eagles Fellowship (collectively, the "Application"). Anagkazo Eagles Fellowship is hereinafter referred to as the "Service Provider".
 
+Data Controller Information
+Anagkazo Eagles Fellowship acts as the Data Controller responsible for the processing of your personal data.
+* Name: Anagkazo Eagles Fellowship
+* Address: Kampala
+* Email: anagkazomedia23@gmail.com
+For data protection inquiries and to exercise your GDPR rights, please contact the Data Controller using the contact information above.
 
-Information Collection and Use
-The Application collects information when you download and use it. This information may include information such as
+What information does the Application obtain and how is it used?
+The Application and related services acquire the information you supply when you download, access, or register for the service. Registration with the Service Provider is not mandatory. However, you might not be able to use some of the features offered by the service unless you register.
+The Service Provider may also use the information you provide to send important information, required notices, and, where permitted by law, marketing communications.
 
-Your device's Internet Protocol address (e.g. IP address)
-The pages of the Application that you visit, the time and date of your visit, the time spent on those pages
-The time spent on the Application
-The operating system you use on your mobile device
+Legal basis for processing your personal data
+Where the GDPR applies, the Service Provider relies on one or more lawful bases to process your personal data, including:
+* Contract performance: processing necessary to provide the Application or fulfil a contract with you.
+* Consent: where you have given explicit consent to processing, including for marketing, analytics, or optional features. You may withdraw consent at any time without affecting processing that occurred before withdrawal.
+* Legitimate interests: where processing is necessary for the Service Provider's specific legitimate interests, such as maintaining network and information security, preventing fraud and abuse, or improving the Application's core functionality through analytics, provided those interests are not overridden by your data protection rights or fundamental freedoms.
+* Legal obligation: to comply with laws or government requests.
 
-The Application does not gather precise information about the location of your mobile device.
+Cookies and similar technologies
+The Application or its third-party SDKs may use cookies, SDKs, pixels, and similar technologies to support functionality, analytics, and service delivery. Where required by law, the Service Provider will obtain your consent before using non-essential tracking technologies.
 
+Automated decision-making and profiling
+If the Application uses automated decision-making, including profiling, that produces legal effects concerning you or similarly significantly affects you, you have the right to request human review, express your point of view, and contest the decision. Information about the logic involved and the likely consequences of that processing will be provided where required by law.
 
+What information does the Application collect automatically?
+In addition, the Application may collect certain information automatically, including, but not limited to, the type of mobile device you use, your mobile device's unique device ID, the IP address of your mobile device, your mobile operating system, the type of mobile Internet browsers you use, and information about the way you use the Application.
+
+Does the Application collect precise real time location information of the device?
+This Application does not gather precise information about the location of your mobile device.
+
+Does the Application use Artificial Intelligence (AI) technologies?
 The Application does not use Artificial Intelligence (AI) technologies to process your data or provide features.
 
-
-The Service Provider may use the information you provided to contact you from time to time to provide you with important information, required notices and marketing promotions.
-
-
-For a better experience, while using the Application, the Service Provider may require you to provide us with certain personally identifiable information, including but not limited to anagkazomedia23@gmail.com. The information that the Service Provider request will be retained by them and used as described in this privacy policy.
-
-
-Third Party Access
+Do third parties see and/or have access to information obtained by the Application?
 Only aggregated, anonymized data is periodically transmitted to external services to aid the Service Provider in improving the Application and their service. The Service Provider may share your information with third parties in the ways that are described in this privacy statement.
 
-
-Please note that the Application utilizes third-party services that have their own Privacy Policy about handling data. Below are the links to the Privacy Policy of the third-party service providers used by the Application:
-
-Google Play Services
-Firebase Crashlytics
-Expo
-
+International Data Transfers
+The Service Provider or its third-party service providers may transfer personal data outside the European Economic Area (EEA). Where such transfers occur, the Service Provider will use an appropriate transfer mechanism required by GDPR Chapter V.
+* Adequacy decisions by the European Commission
+* Standard Contractual Clauses (SCCs) approved by the European Commission
+* Other safeguards or derogations recognized under GDPR Chapter V, including consent where legally permitted
+Countries outside the EEA may not provide the same level of data protection as the EEA. Where required by law, the Service Provider will apply appropriate safeguards and obtain any consent required for the transfer.
 The Service Provider may disclose User Provided and Automatically Collected Information:
+* as required by law, such as to comply with a subpoena, or similar legal process;
+* when they believe in good faith that disclosure is necessary to protect their rights, protect your safety or the safety of others, investigate fraud, or respond to a government request;
+* with their trusted services providers who work on their behalf, do not have an independent use of the information the Service Provider discloses to them, and have agreed to adhere to the rules set forth in this privacy statement.
 
-as required by law, such as to comply with a subpoena, or similar legal process;
-when they believe in good faith that disclosure is necessary to protect their rights, protect your safety or the safety of others, investigate fraud, or respond to a government request;
-with their trusted services providers who work on their behalf, do not have an independent use of the information we disclose to them, and have agreed to adhere to the rules set forth in this privacy statement.
+Where the GDPR applies, the Service Provider enters into Data Processing Agreements (DPAs) with third-party service providers that process personal data on its behalf, as required by Article 28 of the GDPR. These DPAs impose the same data protection obligations on those service providers as described in this Privacy Policy.
 
-Opt-Out Rights
-You can stop all collection of information by the Application easily by uninstalling it. You may use the standard uninstall processes as may be available as part of your mobile device or via the mobile application marketplace or network.
+What are my opt-out rights?
+You can stop further collection of information from your mobile device by uninstalling the Application. Uninstalling will stop the Application from collecting data from your device, but it does not automatically delete information that has already been transmitted to the Service Provider or to third parties.
+To request deletion of your personal data, withdraw consent, or exercise any of your rights, contact the Service Provider at anagkazomedia23@gmail.com.
 
+What is the data retention policy and how can you manage your information?
+The Service Provider retains personal data based on its necessity for the stated purposes:
+* User Provided Data: Retained for the duration of your use of the Application plus 12 months thereafter, unless longer retention is required by law
+* Automatically Collected Data: Retained for up to 24 months from collection, unless longer retention is required for legal compliance or security purposes
+* Aggregated and Anonymized Data: Retained indefinitely as it no longer identifies you
+* Data required for legal compliance: Retained as long as required by applicable law
+You have the right to request deletion of your personal data at any time, except where retention is required by law. If you'd like the Service Provider to delete User Provided Data that you have provided via the Application, please contact them at anagkazomedia23@gmail.com and they will respond within the time required by applicable law. Please note that some User Provided Data may be required in order for the Application to function properly.
 
-Data Retention Policy
-The Service Provider will retain User Provided data for as long as you use the Application and for a reasonable time thereafter. If you'd like them to delete User Provided Data that you have provided via the Application, please contact them at anagkazomedia23@gmail.com and they will respond in a reasonable time.
+How does the Application address children's privacy?
+The Application is not intended for children under 10 years of age, or where a higher age of digital consent is established under applicable law. The Service Provider does not knowingly solicit data from children or market the Application to them.
 
+The Service Provider does not knowingly collect personally identifiable information from children. The Service Provider encourages all children to never submit any personally identifiable information through the Application and/or Services. The Service Provider encourages parents and legal guardians to monitor their children's Internet usage and to help enforce this Policy by instructing their children never to provide personally identifiable information through the Application and/or Services without their permission. If you have reason to believe that a child has provided personally identifiable information to the Service Provider through the Application and/or Services, please contact the Service Provider (anagkazomedia23@gmail.com) so that they will be able to take the necessary actions. If you are under 10 years of age, or where a higher age of digital consent is established by applicable law, your parent or guardian must provide consent on your behalf where permitted by law.
 
-Children
-The Service Provider does not use the Application to knowingly solicit data from or market to children under the age of 13.
+How is your information kept secure?
+The Service Provider is committed to safeguarding the confidentiality of your information. The Service Provider implements physical, electronic, and procedural safeguards to protect information it processes and maintains. For example, access is limited to authorized employees and contractors who need to know that information to operate, develop, or improve the Application. However, no security system can prevent all potential security breaches.
 
+Data Breach Notification
+In the event of a personal data breach that poses a risk to your rights and freedoms, the Service Provider will notify the relevant supervisory authority within 72 hours of becoming aware of the breach, as required by applicable law. Where the breach is likely to result in a high risk to your rights and freedoms, the Service Provider will also notify you without undue delay, providing information about the nature of the breach, the categories of data affected, and the measures taken or proposed to address the breach.
 
-The Application does not address anyone under the age of 13. The Service Provider does not knowingly collect personally identifiable information from children under 13 years of age. In the case the Service Provider discover that a child under 13 has provided personal information, the Service Provider will immediately delete this from their servers. If you are a parent or guardian and you are aware that your child has provided us with personal information, please contact the Service Provider (anagkazomedia23@gmail.com) so that they will be able to take the necessary actions.
+How will you be informed of changes to this Privacy Policy?
+The Service Provider may update this Privacy Policy from time to time. The Service Provider will notify you of material changes by posting the updated Privacy Policy with an effective date. Where required by law, the Service Provider will seek your consent to material changes before they take effect.
 
+Previous versions of this Privacy Policy will be maintained and made available upon request by contacting the Service Provider at anagkazomedia23@gmail.com.
 
-Security
-The Service Provider is concerned about safeguarding the confidentiality of your information. The Service Provider provides physical, electronic, and procedural safeguards to protect information the Service Provider processes and maintains.
+This privacy policy is effective as of 2026-06-02
 
+What are your GDPR data protection rights?
+Under the GDPR, you have the following rights:
+* Right of Access: You can request access to your personal data.
+* Right to Rectification: You can request correction of inaccurate data.
+* Right to Erasure: You can request deletion of your personal data (the "right to be forgotten").
+* Right to Restrict Processing: You can request that the Data Controller limits how they use your data.
+* Right to Data Portability: You can request a copy of your data in a structured, commonly used, machine-readable format.
+* Right to Object: You can object to processing based on legitimate interests. You have an absolute right to object to processing for direct marketing purposes at any time.
+* Right to Withdraw Consent: Where processing is based on your consent, you can withdraw it at any time. Withdrawal is as simple as toggling preferences in the Application's settings or contacting the Data Controller.
+* Rights Regarding Automated Decision-Making: You have rights related to automated decisions that affect you.
+If you believe your data protection rights have been violated, you have the right to lodge a complaint with your local Data Protection Authority. Contact details for each country's Data Protection Authority can be found at: https://edpb.ec.europa.eu/about-edpb/members_en
+If you are located in the United Kingdom, you may contact the Information Commissioner's Office at https://ico.org.uk
 
-Changes
-This Privacy Policy may be updated from time to time for any reason. The Service Provider will notify you of any changes to the Privacy Policy by updating this page with the new Privacy Policy. You are advised to consult this Privacy Policy regularly for any changes, as continued use is deemed approval of all changes.
+What are your California privacy rights (CCPA/CPRA)?
+If you are a resident of California, the California Consumer Privacy Act (CCPA) and the California Privacy Rights Act (CPRA) provide you with additional rights regarding your personal information:
+* Right to Know: You can request disclosure of the categories and specific pieces of personal information the Service Provider has collected about you.
+* Right to Delete: You can request deletion of personal information the Service Provider has collected from you, subject to certain exceptions.
+* Right to Correct: You can request correction of inaccurate personal information.
+* Right to Opt-Out: You can opt out of the sale or sharing of your personal information for cross-context behavioral advertising.
+* Right to Limit Use of Sensitive Personal Information: You can limit the use of your sensitive personal information to essential purposes.
+* Right to Non-Discrimination: The Service Provider will not discriminate against you for exercising any of your CCPA/CPRA rights.
+To exercise any of these rights, please contact the Service Provider at anagkazomedia23@gmail.com. The Service Provider will verify your request using the information you provide and respond within the timeframes required by law. You may designate an authorized agent to make a request on your behalf.
 
+How do you give your consent?
+Where processing is based on consent, you provide that consent by affirmatively opting in to the relevant feature or action. You may withdraw consent at any time without affecting processing carried out before withdrawal. Processing based on other lawful bases, including contract performance, legitimate interests, or legal obligations, is carried out as described above.
 
-This privacy policy is effective as of 2026-04-21
-
-
-Your Consent
-By using the Application, you are consenting to the processing of your information as set forth in this Privacy Policy now and as amended by us.
-
-
-Contact Us
+How can you contact the Data Controller?
 If you have any questions regarding privacy while using the Application, or have questions about the practices, please contact the Service Provider via email at anagkazomedia23@gmail.com.
-
+To request deletion of your personal data or to exercise any of your rights, contact the Service Provider using the details provided above. The Service Provider will respond within one month of receiving your request, extendable by up to two months where necessary due to the complexity or volume of requests, as permitted by applicable law
