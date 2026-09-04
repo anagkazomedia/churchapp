@@ -28,8 +28,10 @@ export default function LibraryScreen() {
   const fetchBooks = async () => {
     try {
       const response = await api.get('api/books/');
-      setBooks(response.data);
-      setFilteredBooks(response.data);
+      // Reverse array so latest uploaded items display at the top
+      const latestFirst = Array.isArray(response.data) ? [...response.data].reverse() : [];
+      setBooks(latestFirst);
+      setFilteredBooks(latestFirst);
     } catch (error) {
       console.error("Error fetching books:", error);
     } finally {

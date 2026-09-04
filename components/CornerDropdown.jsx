@@ -1,4 +1,4 @@
- import React, { useState, useContext } from 'react';
+import React, { useState, useContext } from 'react';
 import { StyleSheet, View, Share, Linking } from 'react-native';
 import { Menu, IconButton, Divider } from 'react-native-paper';
 import { useRouter } from 'expo-router';
@@ -21,6 +21,17 @@ const CornerDropdown = () => {
   const handleNavigation = (path) => {
     setVisible(false);
     router.push(path);
+  };
+
+  const handleShare = async () => {
+    setVisible(false);
+    try {
+      await Share.share({
+        message: 'Check out the Anagkazo app on Google Play: https://play.google.com/store/apps/details?id=com.churchapp.anagkazo&pcampaignid=web_share',
+      });
+    } catch (error) {
+      console.error("Error sharing app:", error.message);
+    }
   };
 
   return (
@@ -78,6 +89,13 @@ const CornerDropdown = () => {
         <Divider />
 
         {/* EXTERNAL / APP ACTIONS */}
+
+        <Menu.Item 
+          leadingIcon="share-variant-outline" 
+          title="Share App" 
+          titleStyle={{ color: theme.text }}
+          onPress={handleShare} 
+        />
         
         <Divider />
         

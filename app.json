@@ -18,7 +18,7 @@
     "android": {
       "package": "com.churchapp.anagkazo",
       "usesCleartextTraffic": true,
-      "versionCode": 1,
+      "versionCode": 3,
       "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/anagkazo-logo.png",
@@ -38,8 +38,8 @@
       "expo-web-browser",
       "expo-font",
       "expo-secure-store",
-      "expo-notifications"
-      
+      "expo-notifications",
+      "expo-video"
     ],
     "assetBundlePatterns": [
       "**/*"
@@ -56,4 +56,4 @@
       }
     }
   }
-}
+} 

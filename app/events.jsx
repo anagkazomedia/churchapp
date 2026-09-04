@@ -19,7 +19,9 @@ export default function EventsPage() {
     const fetchEvents = async () => {
       try {
         const response = await api.get('api/events/');
-        setEvents(response.data);
+        // Reverse array so latest uploaded events appear first
+        const latestFirst = Array.isArray(response.data) ? [...response.data].reverse() : [];
+        setEvents(latestFirst);
       } catch (error) {
         console.error("Error fetching events:", error);
       } finally {
@@ -29,7 +31,7 @@ export default function EventsPage() {
     fetchEvents();
   }, []);
 
-const renderEvent = ({ item }) => (
+  const renderEvent = ({ item }) => (
     <TouchableOpacity 
       style={[styles.card, { backgroundColor: isDark ? '#1C1C1C' : '#FFFFFF' }]}
       onPress={() => {
@@ -86,6 +88,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, 
     paddingVertical: 15,
   },
+  backButton: { marginRight: 15 },
   headerTitle: { fontSize: 24, fontWeight: '900' },
   list: { padding: 16 },
   loader: { marginTop: 50 },

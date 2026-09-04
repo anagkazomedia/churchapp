@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Image as RNImage } from 'react-native';
 import { Image } from 'expo-image';
 import NetInfo from "@react-native-community/netinfo";
+import { Platform } from 'react-native';
 
 const FALLBACKS = {
   video: require('../assets/offline-images/video-default.png'),
@@ -15,8 +16,11 @@ const FALLBACKS = {
 export default function CachedImage({ uri, style, type = 'default' }) {
   const [loadError, setLoadError] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
-  const fallbackSource = RNImage.resolveAssetSource(FALLBACKS[type]);
-
+  // Safely resolve asset source across both native and web environments
+const asset = FALLBACKS[type];
+const fallbackSource = Image.resolveAssetSource 
+  ? Image.resolveAssetSource(asset) 
+  : asset;
   // Check network status to handle offline display behavior
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener(state => {

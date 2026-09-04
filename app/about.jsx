@@ -14,12 +14,12 @@ import { ThemeContext } from '../components/ThemedContext';
 
 // Mission Data (No icons)
 const CORE_VALUES = [
-  { title: "Bible-Centred", desc: "Scripture is the foundation of everything we do — shaping how we live, lead and love." },
-  { title: "Christ-like Love", desc: "We meet people with grace, compassion and dignity, just as Jesus did." },
-  { title: "Community", desc: "We grow stronger together, walking alongside one another in faith and friendship." },
-  { title: "Servant Leadership", desc: "We lead by serving — humbly, faithfully and with the next generation in mind." },
-  { title: "Integrity", desc: "We do what is right when no one is watching, honouring God in word and deed." },
-  { title: "Mission-Minded", desc: "We carry the hope of the Gospel beyond walls — into homes, schools and streets." },
+  { title: "Faithfulness", desc: "Scripture is the foundation of everything we do — shaping how we live, lead and love." },
+  { title: "Integrity", desc: "We meet people with grace, compassion and dignity, just as Jesus did." },
+  { title: "Loyalty", desc: "We grow stronger together, walking alongside one another in faith and friendship." },
+  { title: "Excellence", desc: "We lead by serving — humbly, faithfully and with the next generation in mind." },
+  { title: "Accountability", desc: "We do what is right when no one is watching, honouring God in word and deed." },
+  { title: "Love", desc: "We carry the hope of the Gospel beyond walls — into homes, schools and streets." },
 ];
 
 export default function AboutPage() {
@@ -62,7 +62,7 @@ export default function AboutPage() {
         <View style={[styles.infoCard, { backgroundColor: cardBg, borderColor: dynamicBorder }]}>
           <ThemedText style={styles.cardHeading}>Our Mission & Vision</ThemedText>
           <ThemedText style={styles.cardBody}>
-            Ministering Mercy, Compelling Souls, Growing them Into Winners. Reaching out to nations with God’s message of Love and influence transforming communities.
+            Ministering Mercy, Compelling Souls, Growing them Into Winners. To establish, equip, empower and support communities with knowledge and skills for sustainable living and development promoting the great commission.
           </ThemedText>
         </View>
 
@@ -71,19 +71,8 @@ export default function AboutPage() {
         {CORE_VALUES.map((v, i) => (
           <View key={i} style={[styles.infoCard, { backgroundColor: cardBg, borderColor: dynamicBorder }]}>
             <ThemedText style={styles.cardHeading}>{v.title}</ThemedText>
-            <ThemedText style={styles.cardBody}>{v.desc}</ThemedText>
           </View>
         ))}
-
-        {/* Location Section */}
-        <View style={[styles.infoCard, { backgroundColor: cardBg, borderColor: dynamicBorder }]}>
-          <ThemedText style={styles.cardHeading}>Find Us</ThemedText>
-          <ThemedText style={styles.cardBody}>Anagkazo Eagles Fellowship, St. Julian High School Gayaza, Kampala, Uganda</ThemedText>
-          <Spacer size={15} />
-          <TouchableOpacity style={styles.mapButton} onPress={openMaps}>
-             <ThemedText style={styles.mapButtonText}>GET DIRECTIONS</ThemedText>
-          </TouchableOpacity>
-        </View>
 
         {/* Links */}
         <TouchableOpacity style={styles.linkRow} onPress={() => openLink('http://anagkazobackend-production.up.railway.app')}>
